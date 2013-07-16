@@ -1,0 +1,300 @@
+﻿﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Language" content="zh-cn">
+<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>玻璃幕墙光反射影响预测工具</title>
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.3.custom.min.css">
+<script src="jquery-1.10.2.min.js"></script>
+<script src="jquery-ui-1.10.3.custom.min.js"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=false"></script>
+<style>
+body {
+	margin: 2em;
+	background-color: #FBF8EF;
+	font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
+}
+h1 {
+	font-size: 1.5em;
+	color: #0B3861;
+	margin-top: 0;
+}
+h2 { font-size: 1.25em }
+p {
+    margin: 0.5em 0;
+}
+#map-canvas {
+    height: 500px;
+    width: 75%;
+}
+#tools {
+	float: right;
+	clear: right;
+	width: 20%;
+}
+.wigtitle{
+color:#61380B;
+font-weight: bold;
+}
+.slider {
+	width: 80%;
+	margin: 0 15px 0;
+}
+.jqui{	font-size: 13px;}
+.info {
+    border-bottom: 1px #38C solid;
+    margin-bottom: 2em;
+}
+.num {
+	color: #175086;
+}
+#radio {
+	margin-top: .4em;
+}
+label[for^='radio'] span:before{
+	content:"";
+	position:absolute;
+	left:.5em;
+	top:.5em;
+	width:.5em;
+	height:1em;
+}
+label[for='radio1'] span:before{
+	background-color:#FF8000;
+}
+label[for='radio2'] span:before{
+	background-color:#A5DF00;
+}
+label[for^='radio'] span{
+	text-indent: .5em;
+}
+a, a:visited {
+    text-decoration: none;
+    color: #03E;
+}
+#footer {
+	font-size: 0.5em;
+	margin: 2em;
+}
+</style>
+<script>
+var map;
+var markera;
+var markerb;
+var markerc;
+var markerd;
+dearth = 12745594;
+pi180=0.0174532925199;
+function initialize() {
+    var mapOptions = {
+        zoom: 12,
+        center: new google.maps.LatLng(31.231, 121.474),
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        streetViewControl: false
+    }
+    google.maps.visualRefresh = true;
+    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+    markera = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'A',
+        visible: false,
+        draggable: true,
+    });
+    markerb = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'B',
+        visible: false,
+        draggable: true,
+    });
+    markerc = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'C',
+        visible: false,
+        draggable: true,
+    });
+    markerd = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'D',
+        visible: false,
+        draggable: true,
+    });
+    var poly = new google.maps.Polyline({
+        path: [markera.getPosition(), markerb.getPosition()],
+        map: map,
+        strokeColor: "#FF8000",
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        visible: false,
+    });
+    var polyb = new google.maps.Polyline({
+        path: [markera.getPosition(), markerb.getPosition()],
+        map: map,
+        strokeColor: "#A5DF00",
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        visible: false,
+    });
+    google.maps.event.addListener(map, 'click', function (event) {
+	if ($("[name='radio']:checked").val()=="wa"){
+        if (!markera.getVisible()) {
+            markera.setPosition(event.latLng);
+            markera.setVisible(true);
+        } else if (!markerb.getVisible()) {
+            markerb.setPosition(event.latLng);
+            markerb.setVisible(true);
+            poly.setPath([markera.getPosition(), markerb.getPosition()]);
+            poly.setVisible(true);
+        } else {
+            markera.setPosition(event.latLng);
+            poly.setPath([markera.getPosition(), markerb.getPosition()]);
+        }
+	}else{
+        if (!markerc.getVisible()) {
+            markerc.setPosition(event.latLng);
+            markerc.setVisible(true);
+        } else if (!markerd.getVisible()) {
+            markerd.setPosition(event.latLng);
+            markerd.setVisible(true);
+            polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+            polyb.setVisible(true);
+        } else {
+            markerc.setPosition(event.latLng);
+            polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+        }
+	}
+    });
+    google.maps.event.addListener(map, 'rightclick', function (event) {
+		if ($("[name='radio']:checked").val()=="wa"){
+        markerb.setPosition(event.latLng);
+        poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		}else{
+        markerd.setPosition(event.latLng);
+        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		}
+    });
+    google.maps.event.addListener(markera, 'position_changed', function () {
+        poly.setPath([markera.getPosition(), markerb.getPosition()]);
+        $("#distance").text(dist())
+    });
+    google.maps.event.addListener(markerb, 'position_changed', function () {
+        poly.setPath([markera.getPosition(), markerb.getPosition()]);
+        $("#distance").text(dist())
+    });
+    google.maps.event.addListener(markerc, 'position_changed', function () {
+        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+        $("#distanceb").text(distb())
+    });
+    google.maps.event.addListener(markerd, 'position_changed', function () {
+        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+        $("#distanceb").text(distb())
+    });
+	$("#radiogroup").change(function(){
+	if ($("[name='radio']:checked").val()=="wa"){
+	markera.setVisible(true);
+	markerb.setVisible(true);
+	markerc.setVisible(false);
+	markerd.setVisible(false);
+	poly.setVisible(true);
+	}else{
+	markera.setVisible(false);
+	markerb.setVisible(false);
+	markerc.setVisible(true);
+	markerd.setVisible(true);
+	polyb.setVisible(true);
+	}
+});
+}
+window.onload = initialize;
+
+function dist() {
+    alat = markera.getPosition().lat() * pi180;
+    alng = markera.getPosition().lng() * pi180;
+    blat = markerb.getPosition().lat() * pi180;
+    blng = markerb.getPosition().lng() * pi180;
+    k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
+        .cos(alat) * Math.sin(Math.abs(alng - blng)), 2));
+    l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+	if (l>500){$("#distance").css("color","red")
+	}else{$("#distance").css("color","#175086")}; 
+    return l;
+}
+function distb() {
+    clat = markerc.getPosition().lat() * pi180;
+    clng = markerc.getPosition().lng() * pi180;
+    dlat = markerd.getPosition().lat() * pi180;
+    dlng = markerd.getPosition().lng() * pi180;
+    j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
+        .cos(clat) * Math.sin(Math.abs(clng - dlng)), 2));
+    s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
+	if (s>500){$("#distanceb").css("color","red")
+	}else{$("#distanceb").css("color","#175086")}; 
+    return s;
+}
+$(document).ready(function () {
+    $("#wallh").slider({
+        orientation: "horizontal",
+        range: "min",
+        max: 120,
+        value: 20,
+        slide: function(event, ui) {$("#wallh-n").text( ui.value );},
+        change: function(event, ui) {$("#wallh-n").text( ui.value );}
+    });
+    $("#planeh").slider({
+        orientation: "horizontal",
+        range: "min",
+        max: 100,
+        value: 10,
+        slide: function(event, ui) {$("#planeh-n").text( ui.value );},
+        change: function(event, ui) {$("#planeh-n").text( ui.value );}
+    });
+});
+$(document).ready(function() {
+    $("#radio").buttonset();
+});
+
+</script>
+</head>
+<body>
+  <!--[if lt IE 8]>
+  <div style='border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;'>
+    <div style='position: absolute; right: 3px; top: 3px; font-family: courier new; font-weight: bold;'><a href='#' onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
+    <div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
+        <p style='font-size: 14px; font-weight: bold; margin-top: 12px; text-indent:0;'>您正在使用一款过时的浏览器。</p>
+        <p style='font-size: 12px; margin-top: 6px; line-height: 12px; text-indent:0;'>请升级您的浏览器来获得更好的浏览体验。</p>
+    </div>
+  </div>
+  <![endif]-->
+<h1>玻璃幕墙光反射影响预测工具</h1>
+<div class="info">
+<p>在地图上通过左右键点击或移动标识来确定目标墙体的位置。</p></div>
+<div id="app">
+<div id="tools">
+<h2>计算</h2>
+<p><form id="radiogroup">
+  <span class="wigtitle">更改地图上墙面：</span>
+  <div class="jqui" id="radio">
+    <input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label for="radio1">玻璃幕墙</label>
+    <input type="radio" id="radio2" name="radio" value="wb"><label for="radio2">受照射墙面</label>
+  </div>
+</form></p>
+<p><span class="wigtitle">玻璃幕墙宽：</span><span id="distance" class="num">0</span>米</p>
+<p><span class="wigtitle">受照射墙宽：</span><span id="distanceb" class="num">0</span>米</p>
+<p><span class="wigtitle">玻璃幕墙高度：</span><span id="wallh-n" class="num">20</span>米<div id="wallh" class="slider jqui"></div>
+</p>
+<p><span class="wigtitle">受照射面高度：</span><span id="planeh-n" class="num">10</span>米<div id="planeh" class="slider jqui"></div>
+</p>
+<p><span class="wigtitle">距离：</span><span class="num">0</span>米</p>
+<p><span class="wigtitle">距离：</span><span class="num">0</span>米</p>
+</div>
+<div id="map-canvas"></div>
+</div>
+<div id="footer">
+《<a href="paper.htm">玻璃幕墙光反射对居民住宅的影响预测软件的设计与实现》</a>。制作：XXX，网站空间：Gumble
+</div>
+</body>
+</html>

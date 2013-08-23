@@ -1,0 +1,624 @@
+﻿﻿<!DOCTYPE html>
+<html>
+<head>
+<!--这是文件头-->
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Language" content="zh-cn">
+<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>玻璃幕墙光反射影响预测工具</title>
+<!--引用jQuery、Maps API、d3-->
+<script src="jquery-1.10.2.min.js"></script>
+<script src="jquery-ui-1.10.3.custom.min.js"></script>
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.3.custom.min.css">
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
+<script src="d3.v3.min.js"></script>
+<!--好看的样式表-->
+<style>
+body {
+	margin: 1em 2em;
+	background-color: #FBF8EF;
+	font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
+}
+h1 {
+	font-size: 1.5em;
+	color: #0B3861;
+	margin-top: 0;
+	font-family: 'Droid Sans Fallback', STHeiTi, '微软雅黑', '黑体', SimHei, sans-serif;
+}
+h2 { font-size: 1.25em }
+p {
+    margin: 0.5em 0;
+}
+#map-canvas {
+    height: 500px;
+    width: 70%;
+}
+#tools {
+	float: right;
+	clear: right;
+	width: 25%;
+}
+.wigtitle{
+color:#61380B;
+font-weight: bold;
+}
+.slider {
+	width: 80%;
+	margin: 0 15px 0;
+}
+.jquibt{font-size: .8em;}
+.jqui{font-size: 12px;}
+.info {
+    border-bottom: 1px #38C solid;
+    margin-bottom: 2em;
+}
+.num {
+	color: #175086;
+}
+div#simpleSearch {
+display: block;
+position: relative;
+width: 85%;
+height: 1.75em;
+margin-top: 0.65em;
+border: solid 1px #ddd;
+border-radius: 4px;
+color: black;
+background-color: #f9f9f9;
+}
+div#simpleSearch input#address {
+position: absolute;
+top: 5%;
+left: 0;
+width: 90%;
+height: 90%;
+margin: 0;
+padding: 0;
+padding-left: 1em;
+padding-top: 0.2em;
+padding-bottom: 0.2em;
+outline: none;
+border: none;
+font-size: 14px;
+background-color: transparent;
+}
+div#simpleSearch button#searchButton {
+position: absolute;
+width: 10%;
+right: 0;
+top: 10%;
+padding: 0;
+padding-top: 0.3em;
+padding-bottom: 0.2em;
+padding-right: 0.4em;
+margin: 0;
+border: none;
+background-color: transparent;
+}
+div#simpleSearch button#searchButton > img {
+margin: 0;
+border: none;
+padding: 0;
+vertical-align: middle;
+}
+#radio {
+	margin-top: .4em;
+}
+label[for^='radio'] span:before{
+	content:"";
+	position:absolute;
+	left:.5em;
+	top:.5em;
+	width:.5em;
+	height:1em;
+}
+label[for='radio1'] span:before{
+	background-color:#FF8000;
+}
+label[for='radio2'] span:before{
+	background-color:#A5DF00;
+}
+label.forrad span{
+	text-indent: .5em;
+}
+#error{
+	display:none;
+	position:absolute;
+	font-size:.8em;
+}
+a, a:visited {
+    text-decoration: none;
+    color: #03E;
+}
+#footer {
+	font-size: 0.5em;
+	margin: 2em;
+}
+#chart-svg {
+	width: 100%;
+	
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+</style>
+<!--脚本来了-->
+<script>
+//定义全局地图API控件、数组和常数
+var map;
+var markera;
+var markerb;
+var markerc;
+var markerd;
+var geocoder;
+var visiblemark=false;
+var EffectData=new Array(7);
+for(var i=0;i<7;i++){
+     EffectData[i]=new Array(365);
+	 for(var j=0;j<365;j++){
+		EffectData[i][j]=new Array(8);
+	 };
+};
+//地球直径、角转弧
+dearth = 12745594;
+pi180=0.0174532925199;
+//这里初始化地图
+function initialize() {
+    var mapOptions = {
+        zoom: 12,
+        center: new google.maps.LatLng(31.231, 121.474),
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        streetViewControl: false
+    }
+	geocoder = new google.maps.Geocoder();
+    google.maps.visualRefresh = true;
+    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+	//四个标记站图上
+	//A B 幕墙C D 窗
+    markera = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'A',
+        visible: false,
+        draggable: true,	//鼠标挪动要注意
+    });
+    markerb = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'B',
+        visible: false,
+        draggable: true,
+    });
+    markerc = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'C',
+        visible: false,
+        draggable: true,
+    });
+    markerd = new google.maps.Marker({
+        position: map.getCenter(),
+        map: map,
+        title: 'D',
+        visible: false,
+        draggable: true,
+    });
+	//两条直线连四点
+    var poly = new google.maps.Polyline({
+        path: [markera.getPosition(), markerb.getPosition()],
+        map: map,
+        strokeColor: "#FF8000",	//颜色当然要耐看
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        visible: false,
+    });
+    var polyb = new google.maps.Polyline({
+        path: [markera.getPosition(), markerb.getPosition()],
+        map: map,
+        strokeColor: "#A5DF00",
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        visible: false,
+    });
+	//鼠标点击要处理
+    google.maps.event.addListener(map, 'click', function (event) {
+	if ($("[name='radio']:checked").val()=="wa"){
+		//左键单击蹦出来
+        if (!markera.getVisible()) {
+            markera.setPosition(event.latLng);
+            markera.setVisible(true);
+        } else if (!markerb.getVisible()) {
+            markerb.setPosition(event.latLng);
+            markerb.setVisible(true);
+            poly.setPath([markera.getPosition(), markerb.getPosition()]);
+            poly.setVisible(true);
+		//再点就设第A点
+        } else {
+            markera.setPosition(event.latLng);
+            poly.setPath([markera.getPosition(), markerb.getPosition()]);
+        }
+	}else{
+        if (!markerc.getVisible()) {
+            markerc.setPosition(event.latLng);
+            markerc.setVisible(true);
+			visiblemark=true;
+        } else if (!markerd.getVisible()) {
+            markerd.setPosition(event.latLng);
+            markerd.setVisible(true);
+            polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+            polyb.setVisible(true);
+			visiblemark=true;
+			//再点就设第C点
+			} else {
+            markerc.setPosition(event.latLng);
+            polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+        }
+	}
+    });
+	//右键点击设BD
+    google.maps.event.addListener(map, 'rightclick', function (event) {
+		if ($("[name='radio']:checked").val()=="wa"){
+        markerb.setPosition(event.latLng);
+        poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		}else{
+        markerd.setPosition(event.latLng);
+        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		}
+    });
+	//位置变化算距离
+    google.maps.event.addListener(markera, 'position_changed', function () {
+        poly.setPath([markera.getPosition(), markerb.getPosition()]);
+        $("#distance").text(dist());
+    });
+    google.maps.event.addListener(markerb, 'position_changed', function () {
+        poly.setPath([markera.getPosition(), markerb.getPosition()]);
+        $("#distance").text(dist());
+    });
+    google.maps.event.addListener(markerc, 'position_changed', function () {
+        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+        $("#distanceb").text(distb());
+    });
+    google.maps.event.addListener(markerd, 'position_changed', function () {
+        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+        $("#distanceb").text(distb());
+    });
+	//点击单选标记换
+	$("#radiogroup").change(function(){
+	if ($("[name='radio']:checked").val()=="wa"){
+	markera.setVisible(true);
+	markerb.setVisible(true);
+	markerc.setVisible(false);
+	markerd.setVisible(false);
+	poly.setVisible(true);
+	}else{
+	markera.setVisible(false);
+	markerb.setVisible(false);
+	if (visiblemark){
+	markerc.setVisible(true);
+	markerd.setVisible(true);
+	polyb.setVisible(true);
+	}
+	}
+});
+}
+  function codeAddress() {
+	//搜索马上转到点
+    var saddress = document.getElementById("address").value;
+	if (saddress!="") {
+    geocoder.geocode( {address: saddress, latLng: map.getCenter()}, function(results, status) {
+      if (status == google.maps.GeocoderStatus.OK) {
+        map.panTo(results[0].geometry.location);
+		markera.setPosition(map.getCenter());
+		markerb.setPosition(map.getCenter());
+		markerc.setPosition(map.getCenter());
+		markerd.setPosition(map.getCenter());
+      } else {
+		//显示错误有反应
+		$("#errdiv p").text(function (){
+		if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
+		return "找不到地址。";
+		}else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+		return "超出配额。";
+		}else if (status == google.maps.GeocoderStatus.REQUEST_DENIED) {
+		return "请求被拒绝。";
+		}else if (status == google.maps.GeocoderStatus.INVALID_REQUEST) {
+		return "缺少查询内容。";
+		}
+		});
+		$("#error").show();
+		$("#error").delay(5000);
+		$("#error").fadeOut(500);
+      }
+    });};
+  }
+//这里开始算距离
+function dist() {
+    alat = markera.getPosition().lat() * pi180;
+    alng = markera.getPosition().lng() * pi180;
+    blat = markerb.getPosition().lat() * pi180;
+    blng = markerb.getPosition().lng() * pi180;
+    k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
+        .cos(alat) * Math.sin(Math.abs(alng - blng)), 2));
+    l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+	if (l>500){$("#distance").css("color","red")
+	}else{$("#distance").css("color","#175086")}; 
+    return l;
+}
+//ABCD分开算
+function distb() {
+    clat = markerc.getPosition().lat() * pi180;
+    clng = markerc.getPosition().lng() * pi180;
+    dlat = markerd.getPosition().lat() * pi180;
+    dlng = markerd.getPosition().lng() * pi180;
+    j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
+        .cos(clat) * Math.sin(Math.abs(clng - dlng)), 2));
+    s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
+	if (s>500){$("#distanceb").css("color","red")
+	}else{$("#distanceb").css("color","#175086")}; 
+    return s;
+}
+//计算功能当然在
+//代码高亮多色彩
+function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln) {
+//daynum 日期数是一年中
+//time   时间一天廿四时
+//ala,aln,bla,bln,cla,cln,dla,dln
+//从A 到D 经与纬
+//他们都是坐标点
+avgla=(ala+bla+cla+dla)/4;
+avgln=(aln+bln+cln+dln)/4;
+//算平均数好计算
+localtime=time+(avgln/pi180-120)/15;
+a=Math.PI*2*(daynum-1)/365;
+phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
+//太阳高度来判断
+ho=Math.asin(Math.cos(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)*Math.cos(phi)+Math.sin(avgla)*Math.sin(phi));
+if (ho>0){
+	//代码多眼花缭乱
+	alpha=0-Math.asin(-Math.sin(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)/Math.cos(ho));
+	if (ala-bla!=0){
+		n=Math.abs(bla-ala)/(bla-ala)*Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)*Math.cos(Math.abs(aln-bln))),2)+Math.pow((Math.cos(ala)*Math.sin(Math.abs(aln-bln))),2))/2));
+		}else{n=0};
+	if (cla-dla!=0){
+		m=Math.abs(dla-cla)/(dla-cla)*Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)*Math.cos(Math.abs(cln-dln))),2)+Math.pow((Math.cos(cla)*Math.sin(Math.abs(cln-dln))),2))/2));
+		}else{m=0};
+	gamma=Math.PI/2-m+2*n-alpha;
+	//不算这些不好办
+	theta=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
+	B=0.15*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
+}else{
+	return 0;
+};
+//分类讨论好习惯
+if (theta<Math.PI/12){
+	if (B>=2000){return 6;};
+}else if (theta>=Math.PI/12 && theta<=Math.PI/6){
+	if (B>=2000 && B<4000){
+		return 3;
+	}else if (B>=4000 && B<6000){
+		return 4;
+	}else if (B>=4000 && B<6000){
+		return 5;
+	};
+}else if (theta>Math.PI/6){
+	return 2;
+};
+return 1;
+//影响程度一眼看
+}
+
+function CalcData(){
+    alat = markera.getPosition().lat() * pi180;
+    alng = markera.getPosition().lng() * pi180;
+    blat = markerb.getPosition().lat() * pi180;
+    blng = markerb.getPosition().lng() * pi180;
+    clat = markerc.getPosition().lat() * pi180;
+    clng = markerc.getPosition().lng() * pi180;
+    dlat = markerd.getPosition().lat() * pi180;
+    dlng = markerd.getPosition().lng() * pi180;
+	var lastnum=0;
+	var count=0;
+	//循环往复忙计算
+	for (var i=0;i<365;i++){
+		lastnum=0;
+		count=0;
+		for (var j=0;j<1440;j++){
+			nownum=Calc(i,j/60,alat,alng,blat,blng,clat,clng,dlat,dlng);
+			if (lastnum!=nownum){
+			//其实只要几线段
+				EffectData[lastnum][i][count]=0.5-j;	//-(j-0.5)
+				EffectData[nownum][i][count]=j-0.5;
+				count++;
+			}
+			lastnum=nownum;
+		};
+	};
+}
+
+//网页载入地图来
+//加载界面真可爱
+$(document).ready(function() {
+window.onload = initialize;
+    $("#wallh").slider({
+        orientation: "horizontal",
+        range: "min",
+        max: 120,
+        value: 20,
+        slide: function(event, ui) {$("#wallh-n").text( ui.value );},
+        change: function(event, ui) {$("#wallh-n").text( ui.value );}
+    });
+    $("#planeh").slider({
+        orientation: "horizontal",
+        range: "min",
+        max: 100,
+        value: 10,
+        slide: function(event, ui) {$("#planeh-n").text( ui.value );},
+        change: function(event, ui) {$("#planeh-n").text( ui.value );}
+    });
+    $("#radio").buttonset();
+    $("#button1").button();
+    $("#button1").click(function(){CalcData();$("#chart-svg").html("");d3.select("#chart-svg").selectAll("p")
+    .data(EffectData)
+    .enter()
+    .append("p")
+    .text(function(d) {return d;});});
+//  d3显威画图表
+//学术不精搞不好
+/*var w = 1000;
+var h = 300;
+var padding = 50;
+
+var dataset = [
+				[5, 20], [480, 90], [250, 50], [100, 33], [330, 95],
+				[410, 12], [475, 44], [25, 67], [85, 21], [220, 88],
+				[600, 150]
+			  ];
+
+//Create scale functions
+var xScale = d3.scale.linear()
+					 .domain([0, 364])
+					 .range([padding, w - padding * 2]);
+
+var yScale = d3.scale.linear()
+					 .domain([0, 1439])
+					 .range([h - padding, padding]);
+
+var rScale = d3.scale.linear()
+					 .domain([0, d3.max(dataset, function(d) { return d[1]; })])
+					 .range([2, 5]);
+
+//Define X axis
+var xAxis = d3.svg.axis()
+				  .scale(xScale)
+				  .orient("bottom")
+				  .ticks(5);
+
+//Define Y axis
+var yAxis = d3.svg.axis()
+				  .scale(yScale)
+				  .orient("left")
+				  .ticks(5);
+
+//Create SVG element
+var svg = d3.select("#chart-svg")
+			.append("svg")
+			.attr("width", w)
+			.attr("height", h);
+
+//Create circles
+svg.selectAll("circle")
+   .data(EffectData)
+   .enter()
+   .append("circle")
+   .attr("cx", function(d) {
+		return xScale(d[0]);
+   })
+   .attr("cy", function(d) {
+		return yScale(d[1]);
+   })
+   .attr("r", function(d) {
+		return rScale(d[1]);
+   });
+
+//Create labels
+svg.selectAll("text")
+   .data(dataset)
+   .enter()
+   .append("text")
+   .text(function(d) {
+		return d[0] + "," + d[1];
+   })
+   .attr("x", function(d) {
+		return xScale(d[0]);
+   })
+   .attr("y", function(d) {
+		return yScale(d[1]);
+   })
+   .attr("font-family", "sans-serif")
+   .attr("font-size", "11px")
+   .attr("fill", "red");
+
+//Create X axis
+svg.append("g")
+	.attr("class", "axis")
+	.attr("transform", "translate(0," + (h - padding) + ")")
+	.call(xAxis);
+
+//Create Y axis
+svg.append("g")
+	.attr("class", "axis")
+	.attr("transform", "translate(" + padding + ",0)")
+	.call(yAxis);
+*/
+
+//括号原来在这里
+//细节问题要注意
+});
+</script>
+</head>
+<body>
+<!--IE真是惹人恼，跟在后面拖后脚-->
+  <!--[if lt IE 8]>
+  <div style='border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;'>
+    <div style='position: absolute; right: 3px; top: 3px; font-family: courier new; font-weight: bold;'><a href='#' onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
+    <div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
+        <p style='font-size: 14px; font-weight: bold; margin-top: 12px; text-indent:0;'>您正在使用一款过时的浏览器。</p>
+        <p style='font-size: 12px; margin-top: 6px; line-height: 12px; text-indent:0;'>请升级您的浏览器来获得更好的浏览体验。</p>
+    </div>
+  </div>
+  <![endif]-->
+<h1>玻璃幕墙光反射影响预测工具</h1>
+<div class="info">
+<!--免责声明要写好，免得到时法院找-->
+<p>在地图上通过左右键点击或移动标识来确定目标墙体的位置。</p>
+<p>时区默认UTC+8时区。因为未考虑气候、地形、建筑实际结构、幕墙曲度、中间阻挡物等
+，计算结果为预计最大值。计算结果仅供参考。</p></div>
+<div id="app">
+<div id="tools">
+<form id="searchform" onsubmit="codeAddress();return false;">
+<div id="simpleSearch">
+<input name="search" placeholder="查找地址" title="查找地址" id="address">
+<button type="submit" name="button" title="查找地址" id="searchButton" onclick="codeAddress()">
+<!--二一四字图片小，编码放入拿了跑-->
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAAAAAC4QtCeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAJ0Uk5TAP9bkSK1AAAAaklEQVQI12P4///u3NrauXf/AwHD//05YLAfxLmbl7/n48c9+Xn3gZxJYDGg/BQgpyznC4jzJacMmVOMrgxowMFPnw5CDIAZnbMLxAFaWl09txrEY/gPAe87gTwY5//PmTmr4Jz/f699BgAmIHmp1XxJagAAAABJRU5ErkJggg==" alt="查找地址" width="12" height="13"></button>
+</div>
+</form>
+<!--计算参数要知晓，无米之炊做不了-->
+<h2>计算设置</h2>
+<p><form id="radiogroup">
+  <span class="wigtitle">更改地图上墙面：</span>
+  <div class="jquibt" id="radio">
+    <input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1">玻璃幕墙</label>
+    <input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2">受照射墙面</label>
+  </div>
+</form></p>
+<p><span class="wigtitle">玻璃幕墙宽：</span><span id="distance" class="num">0</span>米</p>
+<p><span class="wigtitle">受照射墙宽：</span><span id="distanceb" class="num">0</span>米</p>
+<p><span class="wigtitle">玻璃幕墙高度：</span><span id="wallh-n" class="num">20</span>米<div id="wallh" class="slider jqui"></div>
+</p>
+<p><span class="wigtitle">受照射面高度：</span><span id="planeh-n" class="num">10</span>米<div id="planeh" class="slider jqui"></div>
+</p>
+<p><span class="wigtitle">距离：</span><span class="num">0</span>米</p>
+<p><div class="jquibt" id="button">
+    <button id="button1" name="button">计算</button>
+</div>
+</p>
+<div class="ui-widget" id="errdiv">
+	<div class="ui-state-highlight ui-corner-all" style="padding: 0 .7em;" id="error">
+		<p></p>
+	</div>
+</div>
+</div>
+<!--空空如也量不小，全是JS大功劳-->
+<div id="map-canvas"></div>
+<div id="chart-svg">
+</div>
+</div>
+<!--<div id="footer">
+制作：XXX，网站空间：Gumble
+</div>-->
+</body>
+</html>

@@ -188,28 +188,28 @@ function initialize() {
         map: map,
         title: 'A',
         visible: false,
-        draggable: true,
+        draggable: true
     });
     markerb = new google.maps.Marker({
         position: map.getCenter(),
         map: map,
         title: 'B',
         visible: false,
-        draggable: true,
+        draggable: true
     });
     markerc = new google.maps.Marker({
         position: map.getCenter(),
         map: map,
         title: 'C',
         visible: false,
-        draggable: true,
+        draggable: true
     });
     markerd = new google.maps.Marker({
         position: map.getCenter(),
         map: map,
         title: 'D',
         visible: false,
-        draggable: true,
+        draggable: true
     });
     var poly = new google.maps.Polyline({
         path: [markera.getPosition(), markerb.getPosition()],
@@ -217,7 +217,7 @@ function initialize() {
         strokeColor: "#FF8000",
         strokeOpacity: 1.0,
         strokeWeight: 3,
-        visible: false,
+        visible: false
     });
     var polyb = new google.maps.Polyline({
         path: [markera.getPosition(), markerb.getPosition()],
@@ -225,7 +225,7 @@ function initialize() {
         strokeColor: "#A5DF00",
         strokeOpacity: 1.0,
         strokeWeight: 3,
-        visible: false,
+        visible: false
     });
     google.maps.event.addListener(map, 'click', function (event) {
 	if ($("[name='radio']:checked").val()=="wa"){
@@ -365,7 +365,7 @@ var a=Math.PI*2*(daynum-1)/365;
 var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
 var ho=Math.asin(Math.cos(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)*Math.cos(phi)+Math.sin(avgla)*Math.sin(phi));
 //ho2=Math.acos();
-////////////////////////////////determine whether in the range!!!!!!!!!!!!!!!!!1
+////////////////////////////////determine whether in the range!!!!!!!!!!!!!!!!!
 if (ho>0){
 	var alpha=0-Math.asin(-Math.sin(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)/Math.cos(ho));
 	if (ala-bla!=0){
@@ -591,12 +591,12 @@ initialize();
 </script>
 </head>
 <body>
-  <!--[if lt IE 8]>
-  <div style='border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;'>
-    <div style='position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;'><a href='#' onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
+  <!--[if lt IE 9]>
+  <div style="border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
+    <div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
     <div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
-        <p style='font-size: 14px; font-weight: bold; margin-top: 12px; text-indent:0;'>您正在使用一款过时的浏览器。</p>
-        <p style='font-size: 12px; margin-top: 6px; line-height: 12px; text-indent:0;'>请升级您的浏览器来获得更好的浏览体验。</p>
+        <p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。网页可能无法使用。</p>
+        <p style="font-size: 12px; margin-top: 6px; line-height: 12px; text-align: center;">请升级您的浏览器（IE9及以上或其他浏览器）来获得更好的浏览体验。</p>
     </div>
   </div>
   <![endif]-->

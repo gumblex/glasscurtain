@@ -42,7 +42,7 @@ p {
 #chart-legend {
 	float: right;
 	clear: right;
-	width: 20%;
+	width: 23%;
 }
 .wigtitle{
 color:#61380B;
@@ -127,6 +127,9 @@ label[for='radio2'] span:before{
 label.forrad span{
 	text-indent: .5em;
 }
+#button{
+margin: 2em 1em;
+}
 #error{
 	display:none;
 	position:absolute;
@@ -139,6 +142,9 @@ a, a:visited {
 #footer {
 	font-size: 0.5em;
 	margin: 2em;
+	padding-top: 1em;
+	border-top: 1px #EEE solid;
+	text-align: center;
 }
 #chart-svg {
 	width: 80%;
@@ -158,7 +164,7 @@ var markerc;
 var markerd;
 var geocoder;
 var visiblemark=false;
-var Palette=["#9edae5","#2ca02c","#1f77b4","#e377c2","#ff7f0e","#d62728"];
+var Palette=["#9edae5","#55FF55","#1f77b4","#e377c2","#ff7f0e","#d62728"];
 var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
 var dearth = 12745594;
 var pi180 = 0.0174532925199;
@@ -166,10 +172,7 @@ var pi180 = 0.0174532925199;
 var w = $(document.body).width() * 0.75;
 var h = 400;
 var padding = 32;
-var timeoutID;
-/////////////////////////////////////////////////
-
-/////////////////////////////////////time/day density
+var timeoutID = -1;
 function initialize() {
     var mapOptions = {
         zoom: 12,
@@ -266,23 +269,19 @@ function initialize() {
     });
     google.maps.event.addListener(markera, 'position_changed', function () {
         poly.setPath([markera.getPosition(), markerb.getPosition()]);
-        $("#distance").text(dist());
-		if ($("#autocalc").is(':checked') && visiblemark){DrawChart(3,5)};
+        $("#distance").text(dist());AutoRedraw();
     });
     google.maps.event.addListener(markerb, 'position_changed', function () {
         poly.setPath([markera.getPosition(), markerb.getPosition()]);
-        $("#distance").text(dist());
-		if ($("#autocalc").is(':checked') && visiblemark){DrawChart(3,5)};
+        $("#distance").text(dist());AutoRedraw();
     });
     google.maps.event.addListener(markerc, 'position_changed', function () {
         polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-        $("#distanceb").text(distb());
- 		if ($("#autocalc").is(':checked') && visiblemark){DrawChart(3,5)};
+        $("#distanceb").text(distb());AutoRedraw();
    });
     google.maps.event.addListener(markerd, 'position_changed', function () {
         polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-        $("#distanceb").text(distb());
-		if ($("#autocalc").is(':checked') && visiblemark){DrawChart(3,5)};
+        $("#distanceb").text(distb());AutoRedraw();
     });
 	$("#radiogroup").change(function(){
 	if ($("[name='radio']:checked").val()=="wa"){
@@ -331,25 +330,25 @@ function initialize() {
     });};
   }
 function dist() {
-    alat = markera.getPosition().lat() * pi180;
-    alng = markera.getPosition().lng() * pi180;
-    blat = markerb.getPosition().lat() * pi180;
-    blng = markerb.getPosition().lng() * pi180;
-    k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
+    var alat = markera.getPosition().lat() * pi180;
+    var alng = markera.getPosition().lng() * pi180;
+    var blat = markerb.getPosition().lat() * pi180;
+    var blng = markerb.getPosition().lng() * pi180;
+    var k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
         .cos(alat) * Math.sin(Math.abs(alng - blng)), 2));
-    l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+    var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
 	if (l>500){$("#distance").css("color","red")
 	}else{$("#distance").css("color","#175086")}; 
     return l;
 }
 function distb() {
-    clat = markerc.getPosition().lat() * pi180;
-    clng = markerc.getPosition().lng() * pi180;
-    dlat = markerd.getPosition().lat() * pi180;
-    dlng = markerd.getPosition().lng() * pi180;
-    j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
+    var clat = markerc.getPosition().lat() * pi180;
+    var clng = markerc.getPosition().lng() * pi180;
+    var dlat = markerd.getPosition().lat() * pi180;
+    var dlng = markerd.getPosition().lng() * pi180;
+    var j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
         .cos(clat) * Math.sin(Math.abs(clng - dlng)), 2));
-    s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
+    var s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
 	if (s>500){$("#distanceb").css("color","red")
 	}else{$("#distanceb").css("color","#175086")}; 
     return s;
@@ -388,13 +387,20 @@ if (theta<Math.PI/12){
 		return 2;
 	}else if (B>=4000 && B<6000){
 		return 3;
-	}else if (B>=4000 && B<6000){
+	}else if (B>=6000){
 		return 4;
 	};
 }else if (theta>Math.PI/6){
 	return 1;
 };
 return 0;
+}
+function AutoRedraw(){
+    if ($("#autocalc").is(':checked') && visiblemark){
+	if (timeoutID!=-1){clearTimeout(timeoutID)};
+	DrawChart(3,5);
+	timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
+    };
 }
 function DrawChart(densityx,densityy){
 var EffectData=new Array(7);
@@ -405,48 +411,6 @@ var EffectDataEnd=new Array(7);
 for(i=0;i<7;i++){
      EffectDataEnd[i]=[[]];
 };
-$("#grapharea").empty();
-//Create scale functions
-var xScale = d3.scale.linear()
-					 .domain([0, 1439])
-					 .range([padding, w - padding * 2]);
-
-var yScale = d3.scale.linear()
-					 .domain([0, 364])
-					 .range([h - padding, padding]);
-/*
-var xAxScale = d3.scale.linear()
-					 .domain([0, 24])
-					 .range([padding, w - padding * 2]);
-
-var yAxScale = d3.scale.linear()
-					 .domain([1,13])
-					 .range([h - padding, padding]);
-
-//Define X axis
-var xAxis = d3.svg.axis()
-				  .scale(xAxScale)
-				  .orient("bottom")
-				  .ticks(24)
-				  .tickFormat(function(d) {if (d!=24){return d;}else{return "小时";}});
-
-//Define Y axis
-var yAxis = d3.svg.axis()
-				  .scale(yAxScale)
-				  .orient("left")
-				  .ticks(12)
-				  .tickFormat(function(d) {if (d!=13){return d;}else{return "月";}});
-
-//Create SVG element
-var svg = d3.select("#chart-svg")
-			.append("svg")
-			.attr("width", w)
-			.attr("height", h);*/
-var graph = d3.select("#grapharea");
-var lineFunction = d3.svg.line()
-                   .x(function(d) {return xScale(d[0]);})
-                   .y(function(d) {return yScale(d[1]);})
-                   .interpolate("linear-closed");
 alat = markera.getPosition().lat() * pi180;
 alng = markera.getPosition().lng() * pi180;
 blat = markerb.getPosition().lat() * pi180;
@@ -455,6 +419,25 @@ clat = markerc.getPosition().lat() * pi180;
 clng = markerc.getPosition().lng() * pi180;
 dlat = markerd.getPosition().lat() * pi180;
 dlng = markerd.getPosition().lng() * pi180;
+var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math
+    .cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
+var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+$("#grapharea").empty();
+if (l>1500){return 0}; 
+if (dist()>500 || distb()>500){return 0}; 
+
+//Create scale functions
+var xScale = d3.scale.linear()
+	.domain([0, 1439])
+	.range([padding, w - padding * 2]);
+var yScale = d3.scale.linear()
+	.domain([0, 364])
+	.range([h - padding, padding]);
+var graph = d3.select("#grapharea");
+var lineFunction = d3.svg.line()
+                   .x(function(d) {return xScale(d[0]);})
+                   .y(function(d) {return yScale(d[1]);})
+                   .interpolate("linear-closed");
 //h1 = $("#wallh").slider("value");
 //h2 = $("#planeh").slider("value");
 var lastnum=-1;
@@ -476,23 +459,10 @@ for (i=0;i<365;i+=densityy){
 		}
 		lastnum=nownum;
 	};
-	/*if (i>0) {for (j=0;j<7;j++){
-		if (count[j]<lastcount[j]) {
-			closeda[j]=closeda[j]+lastcount[j]-count[j];
-			for (k=0;k<lastcount[j]-count[j];k++){
-				EffectData[j].push(new Array());
-				EffectDataEnd[j].push(new Array());
-				}
-		}
-		lastcount[j]=count[j];
-	}};*/
 	for (j=0;j<6;j++){  
-		//addcount=Math.abs(nowtime[j].length-lastcount[j])-1;
 		if (nowtime[j].length!=lastcount[j]){
-		//console.log("closeda[nownum]"+closeda[nownum]);
-		//console.log("lasttime[j].length"+lasttime[j].length);
-			addcount=lastcount[j]+nowtime[j].length;//Math.abs(nowtime[j].length-lastcount[j])+1;
-			if (i>0){closeda[j]+=lastcount[j];}//addcount++;
+			addcount=lastcount[j]+nowtime[j].length;
+			if (i>0){closeda[j]+=lastcount[j];}
 			for (k=0;k<addcount;k++){
 				EffectData[j].push(new Array());
 				EffectDataEnd[j].push(new Array());
@@ -515,47 +485,9 @@ for (i=0;i<365;i+=densityy){
 			EffectDataEnd[j][closeda[j]+k].push([nowend[j][k],i]);
 		}}
 		lastcount[j]=nowtime[j].length;
-/*
-		if (nowtime[j].length!=lastcount[j] && i>0){
-		//console.log("closeda[nownum]"+closeda[nownum]);
-		//console.log("lasttime[j].length"+lasttime[j].length);
-			addcount++;closeda[j]+=addcount;
-			for (k=0;k<addcount;k++){
-				EffectData[j].push(new Array());
-				EffectDataEnd[j].push(new Array());
-			}
-			for (k=0;k<nowtime[j].length;k++){
-				EffectData[j][closeda[j]+k][EffectData[j][closeda[j]+k].length-1][1]-=0.5;
-				EffectDataEnd[j][closeda[j]+k][EffectDataEnd[j][closeda[j]+k].length-1][1]-=0.5;
-				EffectData[j][closeda[j]+k].push([nowtime[j][k],i-0.5]);
-				EffectDataEnd[j][closeda[j]+k].push([nowend[j][k],i-0.5]);
-			}
-		}else{
-			if (i==0){for (k=0;k<addcount;k++){
-				EffectData[j].push(new Array());
-				EffectDataEnd[j].push(new Array());
-			}};
-			for (k=0;k<nowtime[j].length;k++){
-			//console.log("nowtime[j].length="+nowtime[j].length);
-			//console.log("k="+(k));
-			//console.log("k+closeda[nownum]="+(k+closeda[nownum]));
-			//console.log("j="+j);
-			//console.log(closeda);
-			//console.log("nownum="+nownum);
-				EffectData[j][closeda[j]+k].push([nowtime[j][k],i]);
-				EffectDataEnd[j][closeda[j]+k].push([nowend[j][k],i]);}
-		}
-		lastcount[j]=nowtime[j].length;*/
 	}
 };
-/*svg.append("rect").attr("x", padding)
-				.attr("y", padding)
-				.attr("width", w - padding*3)
-				.attr("height", h - padding*2)
-				.attr("fill","#F0F0F0");*/
 for(i=0;i<6;i++){
-	//sortByKey(EffectData[i],2);
-	//sortByKey(EffectDataEnd[i],2);
 	for (j=0;j<EffectData[i].length;j++){
 		EffectData[i][j]=EffectData[i][j].concat(EffectDataEnd[i][j].reverse());
 		if (EffectData[i][j].length>1){
@@ -573,17 +505,6 @@ graph.append("circle")
 	.attr("cy",yScale(Math.floor((nowDate-startD)/86400000)))
 	.attr("r",2)
 	.attr("fill","#0B3861")
-//Create X axis
-/*svg.append("g")
-	.attr("class", "axis ax")
-	.attr("transform", "translate(0," + (h - padding) + ")")
-	.call(xAxis);
-
-//Create Y axis
-svg.append("g")
-	.attr("class", "axis ay")
-	.attr("transform", "translate(" + padding + ",0)")
-	.call(yAxis);*/
 }
 $(document).ready(function() {
 var i=0;var j=0;var k=0;
@@ -628,7 +549,44 @@ initialize();
 		.attr("transform", "translate(" + padding + ",0)").call(yAxis);
 	svg.append("g").attr("id", "grapharea");
 	var lgsvg = d3.select("#chart-legend").append("svg").attr("width", $(document.body).width() * 0.2).attr("height", h-100);
-	
+	lgsvg.selectAll("rect")
+	    .data(Palette)
+	    .enter()
+	    .append("rect")
+	    .attr("x", 2)
+	    .attr("y", function(d,i) {return i*25;})
+	    .attr("width", 30)
+	    .attr("height", 20)
+	    .attr("fill", function(d) {return d;});
+	lgsvg.selectAll("text")
+	    .data(efname)
+	    .enter()
+	    .append("text")
+	    .attr("x", 40)
+	    .attr("y", function(d,i) {return i*25+16;})
+	    .style("font-size","16px")
+	    .text(function(d) {return d;});
+	lgsvg.append("rect")
+	    .attr("x", 2)
+	    .attr("y", 150)
+	    .attr("width", 30)
+	    .attr("height", 20)
+		.attr("fill","#F0F0F0");
+	lgsvg.append("text")
+	    .attr("x", 40)
+	    .attr("y", 166)
+	    .style("font-size","16px")
+	    .text("无日光");
+	lgsvg.append("circle")
+	    .attr("cx", 17)
+	    .attr("cy", 185)
+	    .attr("r", 2)
+	    .attr("fill","#0B3861")
+	lgsvg.append("text")
+	    .attr("x", 40)
+	    .attr("y", 191)
+	    .style("font-size","16px")
+	    .text("当前时间");
 });
 </script>
 </head>
@@ -676,20 +634,19 @@ initialize();
 </div>
 </p>
 <div class="ui-widget" id="errdiv">
-	<div class="ui-state-highlight ui-corner-all" style="padding: 0 .7em;" id="error">
-		<p></p>
-	</div>
+	<div class="ui-state-highlight ui-corner-all" style="padding: 0 .7em;" id="error"><p></p></div>
 </div>
 </div>
 <div id="map-canvas"></div>
 <div id="chart-legend">
 <h2>图例</h2>
+<p><span class="wigtitle" style="background-color:#F0F0F0">空白</span>：位置不正确或无影响。</p>
 </div>
 <div id="chart-svg">
 </div>
 </div>
-<!--<div id="footer">
-制作：XXX，网站空间：Gumble
-</div>-->
+<div id="footer">
+制作：……
+</div>
 </body>
 </html>

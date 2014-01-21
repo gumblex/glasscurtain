@@ -6,7 +6,8 @@
 <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>玻璃幕墙光反射影响预测工具</title>
 <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
-<script src="jquery-1.10.2.min.js"></script>
+<!--<script src="jquery-1.10.2.min.js"></script>-->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script src="jquery-ui-1.10.3.custom.min.js"></script>
 <link rel="stylesheet" type="text/css" href="jquery-ui-1.10.3.custom.min.css">
 <script src="d3.v3.min.js"></script>
@@ -44,6 +45,7 @@ p {
 	clear: right;
 	width: 23%;
 }
+#errdiv{margin: 1em;}
 .wigtitle{
 color:#61380B;
 font-weight: bold;
@@ -74,7 +76,7 @@ background-color: #f9f9f9;
 }
 #simpleSearch #address {
 position: absolute;
-top: 5%;
+top: 0;
 left: 0;
 width: 90%;
 height: 90%;
@@ -92,7 +94,7 @@ background-color: transparent;
 position: absolute;
 width: 10%;
 right: 0;
-top: 10%;
+top: 8%;
 padding: 0;
 padding-top: 0.3em;
 padding-bottom: 0.2em;
@@ -171,11 +173,13 @@ var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];
 var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
 var dearth = 12745594;
 var pi180 = 0.0174532925199;
-//SVG Width and height
-var w = $(document.body).width() * 0.75;
-var h = 400;
+var timeoutID = 0;
+var h = 400, w=1000;
 var padding = 32;
+var midleTime = 0;
 var timeoutID = -1;
+var timeoutIDb = -1;
+var idleInterval = -1;
 function initialize() {
 	var mapOptions = {
 		zoom: 12,
@@ -277,19 +281,19 @@ function initialize() {
 	});
 	google.maps.event.addListener(markera, 'position_changed', function () {
 		poly.setPath([markera.getPosition(), markerb.getPosition()]);
-		$("#distance").text(dist());AutoRedraw();
+		$("#distance").text(dist());AutoDraw();
 	});
 	google.maps.event.addListener(markerb, 'position_changed', function () {
 		poly.setPath([markera.getPosition(), markerb.getPosition()]);
-		$("#distance").text(dist());AutoRedraw();
+		$("#distance").text(dist());AutoDraw();
 	});
 	google.maps.event.addListener(markerc, 'position_changed', function () {
 		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-		$("#distanceb").text(distb());AutoRedraw();
+		$("#distanceb").text(distb());AutoDraw();
    });
 	google.maps.event.addListener(markerd, 'position_changed', function () {
 		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-		$("#distanceb").text(distb());AutoRedraw();
+		$("#distanceb").text(distb());AutoDraw();
 	});
 	$("#radiogroup").change(function(){
 	if ($("[name='radio']:checked").val()=="wa"){
@@ -329,10 +333,10 @@ function initialize() {
 		return "请求被拒绝。";
 		}else if (status == google.maps.GeocoderStatus.INVALID_REQUEST) {
 		return "缺少查询内容。";
-		}
+		}else{return "连接错误。";}
 		});
 		$("#error").show();
-		$("#error").delay(5000);
+		$("#error").delay(8000);
 		$("#error").fadeOut(500);
 	  }
 	});};
@@ -400,7 +404,7 @@ if (ho>0){
 	if (cla<dla){m=Math.PI-m}; if (cln<dln){m=-m};
 	mu=2*n-alpha;
 	L=Hg/Math.tan(ho);
-	if (daynum==0  && time==11){console.log(L)};
+	//if (daynum==0  && time==11){console.log(L)};
 	ala2=ala-(L*Math.cos(Math.PI-mu)*2/dearth);
 	aln2=aln+(L*Math.sin(Math.PI-mu)*2/dearth);
 	bla2=bla-(L*Math.cos(Math.PI-mu)*2/dearth);
@@ -419,7 +423,7 @@ if (ho>0){
 	ya=L*Math.sin(Math.PI-mu);
 	yb=y1+L*Math.sin(Math.PI-mu);
 	if (Math.sin(mu-m)>0){
-		if (daynum==0 && time==Math.floor(time)){lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu)}
+		if (daynum==0 && time*3==Math.floor(time*3)){lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu)}
 		return 0;
 	}else{
 		if (daynum==0 && time==Math.floor(time)){lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu)}}
@@ -428,7 +432,7 @@ if (ho>0){
 	//lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu);
 	gamma=-Math.PI/2+m-2*n+alpha;
 	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
-	B=0.15*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
+	B=0.2*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
 }else{
 	return -1;
 };
@@ -454,21 +458,46 @@ function lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu){
 		new google.maps.LatLng(ala2/pi180, aln2/pi180),
 		new google.maps.LatLng(bla2/pi180, bln2/pi180),
 		new google.maps.LatLng(bla/pi180, bln/pi180)],
-		map: map,
 		strokeColor: "#FF8000",
 		strokeOpacity: 1.0,
 		strokeWeight: 2,
 		visible: true,
+		map: map,
 	}));
 }
-
-function AutoRedraw(){
-	if ($("#autocalc").is(':checked') && visiblemark){
-	if (timeoutID!=-1){clearTimeout(timeoutID)};
-	DrawChart(3,5);
-	timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
-	};
+function timerIncrement() {
+	midleTime++;
+	if (midleTime == 5) { // 500ms
+		DrawChart(3,5);
+	}else if (midleTime > 25){
+		clearInterval(idleInterval);
+		idleInterval=-1;
+		midleTime=0;
+		DrawChart(1,1);
+	}
 }
+function AutoDraw(){
+	if (visiblemark){
+	midleTime=0;
+	if (pab1.length!=0){
+		for (k = 0; k < pab1.length; k++){pab1[k].setMap(null);};
+		pab1.length = 0;pab1=[]};
+	if (idleInterval==-1){idleInterval = setInterval(timerIncrement, 100)
+	};
+	//timeoutIDb=setTimeout("AutoRedraw();timeoutIDb=-1",500);
+	};
+};
+function AutoRedraw(){
+	if (visiblemark){
+	midleTime=4;
+	if (pab1.length!=0){
+		for (k = 0; k < pab1.length; k++){pab1[k].setMap(null);};
+		pab1.length = 0;pab1=[]};
+	if (idleInterval==-1){idleInterval = setInterval(timerIncrement, 100)
+	};
+	//timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
+	};
+};
 function DrawChart(densityx,densityy){
 if (pab1.length!=0){
 for (k = 0; k < pab1.length; k++){pab1[k].setMap(null);};
@@ -494,8 +523,9 @@ dlng = markerd.getPosition().lng() * pi180;
 var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math.cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
 var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
 $("#grapharea").empty();
-if (l>1500){return 0}; 
-if (dist()>500 || distb()>500){return 0}; 
+if (l>1500){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
+if (dist()>100 || distb()>25){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
+if (dist()>100 || distb()>25){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
 
 //Create scale functions
 var xScale = d3.scale.linear()
@@ -515,6 +545,7 @@ var lastnum=-1;
 var nownum=-1;
 var lastcount=[0,0,0,0,0,0];
 var closeda=[0,0,0,0,0,0];
+var sumup=[0,0,0,0,0,0];
 var nowtime=[[],[],[],[],[],[]];
 var nowend=[[],[],[],[],[],[]];
 var addcount=0;
@@ -525,6 +556,7 @@ for (i=0;i<365;i+=densityy){
 	lastnum=-1;
 	for (j=0;j<1440;j+=densityx){
 		nownum=Calc(i,j/60,alat,alng,blat,blng,clat,clng,dlat,dlng,h1);
+		if (nownum!=-1){sumup[nownum]++};
 		if (lastnum!=nownum){
 			if (lastnum!=-1){nowend[lastnum].push(j-0.5);};
 			if (nownum!=-1){nowtime[nownum].push(j-0.5);}
@@ -570,6 +602,13 @@ for(i=0;i<6;i++){
 		.attr("stroke-width", 1);}
 	}
 }
+var sumall=0;
+$.each(sumup,function() {
+    sumall += this;
+});
+for(i=0;i<6;i++){
+	$("#tp"+i).text(Math.round(10000*sumup[i]/sumall)/100 + "%");
+};
 var nowDate=new Date();
 var startD = new Date(nowDate.getFullYear(), 0, 0);
 graph.append("circle")
@@ -579,6 +618,8 @@ graph.append("circle")
 	.attr("fill","#0B3861")
 }
 $(document).ready(function() {
+	//SVG Width and height
+w = $(document.body).width() * 0.75;
 var i=0;var j=0;var k=0;
 initialize();
 	$("#wallh").slider({
@@ -589,21 +630,11 @@ initialize();
 		slide: function(event, ui) {$("#wallh-n").text( ui.value );},
 		change: function(event, ui) {$("#wallh-n").text( ui.value );AutoRedraw();}
 	});
-	$("#planeh").slider({
-		orientation: "horizontal",
-		range: "min",
-		max: 100,
-		value: 10,
-		slide: function(event, ui) {$("#planeh-n").text( ui.value );},
-		change: function(event, ui) {$("#planeh-n").text( ui.value );}
-	});
 	$("#radio").buttonset();
 	$("#lbradio1").click(function(){
 		$("#btnturnw").css("border-bottom-color","#FF8000");})
 	$("#lbradio2").click(function(){
 		$("#btnturnw").css("border-bottom-color","#A5DF00");})
-	$("#btncalc").button();
-	$("#autocalc").button();
 	$("#btnturn").button();
 	$("#btnturn").click(function(){
 		if ($("[name='radio']:checked").val()=="wa"){
@@ -654,6 +685,17 @@ initialize();
 		.attr("y", function(d,i) {return i*25+16;})
 		.style("font-size","16px")
 		.text(function(d) {return d;});
+	lgsvg.append("g").attr("id", "lgpercent");
+	lgsvg.select("#lgpercent").selectAll("text")
+		.data(efname)
+		.enter()
+		.append("text")
+		.attr("id",function(d,i) {return "tp" + i;})
+		.attr("x", "8em")
+		.attr("y", function(d,i) {return i*25+16;})
+		.style("font-size","16px")
+		.style("fill","#175086")
+		.text(function(d) {return "";});
 	lgsvg.append("rect")
 		.attr("x", 2)
 		.attr("y", 150)
@@ -680,7 +722,7 @@ initialize();
 </head>
 <body>
   <!--[if lt IE 9]>
-  <div style="border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
+  <div style="border: 1px solid #FF4000; background-color: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
 	<div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
 	<div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
 		<p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。网页可能无法使用。</p>
@@ -704,7 +746,7 @@ initialize();
 </form>
 <h2>计算设置</h2>
 <p>
-  <span class="wigtitle">更改地图上墙面：<button class="jquibt" id="btnturn" name="btnturn">旋转<span id="btnturnw">墙面</span></button></span>
+ <p><span class="wigtitle">更改地图上墙面：</span><span class="jquibt"><button id="btnturn" name="btnturn">旋转<span id="btnturnw">墙面</span></button></span></p>
 <form id="radiogroup"><div class="jquibt" id="radio">
 	<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1" id="lbradio1">玻璃幕墙</label>
 	<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">受照射墙面</label>
@@ -712,15 +754,14 @@ initialize();
 </form></p>
 <p><span class="wigtitle">玻璃幕墙宽：</span><span id="distance" class="num">0</span>米</p>
 <p><span class="wigtitle">受照射墙宽：</span><span id="distanceb" class="num">0</span>米</p>
-<p><span class="wigtitle">玻璃幕墙高度：</span><span id="wallh-n" class="num">20</span>米<div id="wallh" class="slider jqui"></div>
-</p>
-<p><span class="wigtitle">受照射面高度：</span><span id="planeh-n" class="num">10</span>米<div id="planeh" class="slider jqui"></div>
-</p>
+<p><span class="wigtitle">玻璃幕墙高度：</span><span id="wallh-n" class="num">20</span>米</p>
+<div id="wallh" class="slider jqui"></div>
+<!--
 <p><div class="jquibt" id="button">
 	<button id="btncalc" name="button" title="绘图更精确">计算</button>
 	<input type="checkbox" id="autocalc" name="autocalc" checked="checked"><label for="autocalc">自动计算</label>
 </div>
-</p>
+</p>-->
 <div class="ui-widget" id="errdiv">
 	<div class="ui-state-highlight ui-corner-all" style="padding: 0 .7em;" id="error"><p></p></div>
 </div>

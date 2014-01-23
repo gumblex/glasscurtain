@@ -164,7 +164,7 @@ var markerc;
 var markerd;
 var geocoder;
 var visiblemark=false;
-var Palette=["#9edae5","#55FF55","#1f77b4","#e377c2","#ff7f0e","#d62728"];
+var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];
 var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
 var dearth = 12745594;
 var pi180 = 0.0174532925199;
@@ -375,14 +375,14 @@ if (ho>0){
 		m=Math.abs(dla-cla)/(dla-cla)*Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)*Math.cos(Math.abs(cln-dln))),2)+Math.pow((Math.cos(cla)*Math.sin(Math.abs(cln-dln))),2))/2));
 		}else{m=0};
 	gamma=Math.PI/2-m+2*n-alpha;
-	theta=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
+	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
 	B=0.15*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
 }else{
 	return -1;
 };
-if (theta<Math.PI/12){
+if (lambda<Math.PI/12){
 	if (B>=2000){return 5;};
-}else if (theta>=Math.PI/12 && theta<=Math.PI/6){
+}else if (lambda>=Math.PI/12 && lambda<=Math.PI/6){
 	if (B>=2000 && B<4000){
 		return 2;
 	}else if (B>=4000 && B<6000){
@@ -390,7 +390,7 @@ if (theta<Math.PI/12){
 	}else if (B>=6000){
 		return 4;
 	};
-}else if (theta>Math.PI/6){
+}else if (lambda>Math.PI/6){
 	return 1;
 };
 return 0;
@@ -536,7 +536,7 @@ initialize();
 	});
 	var xAxScale = d3.scale.linear().domain([0, 24]).range([padding, w - padding * 2]);
 	var yAxScale = d3.scale.linear().domain([1,13]).range([h - padding, padding]);
-	var xAxis = d3.svg.axis().scale(xAxScale).orient("bottom").ticks(24)
+	var xAxis = d3.svg.axis().scale(xAxScale).orient("bottom").ticks(12)
 				  .tickFormat(function(d) {if (d!=24){return d;}else{return "小时";}});
 	var yAxis = d3.svg.axis().scale(yAxScale).orient("left").ticks(12)
 				  .tickFormat(function(d) {if (d!=13){return d;}else{return "月";}});

@@ -1,0 +1,706 @@
+﻿﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Language" content="zh-cn">
+<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>玻璃幕墙光反射影响预测工具</title>
+<script src="jquery-1.10.2.min.js"></script>
+<script src="jquery-ui-1.10.3.custom.min.js"></script>
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.3.custom.min.css">
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
+<script src="d3.v3.min.js"></script>
+<style>
+body {
+	margin: 1em 2em;
+	background-color: #FBF8EF;
+	font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
+}
+h1 {
+	font-size: 1.5em;
+	color: #0B3861;
+	margin-top: 0;
+	font-family: 'Droid Sans Fallback', STHeiTi, '微软雅黑', '黑体', SimHei, sans-serif;
+}
+h2 { font-size: 1.25em }
+p {
+	margin: 0.5em 0;
+}
+#map-canvas {
+	height: 500px;
+	width: 70%;
+}
+#tools {
+	float: right;
+	clear: right;
+	width: 25%;
+}
+#chart-svg {
+	height: 400px;
+	width: 75%;
+}
+#chart-legend {
+	float: right;
+	clear: right;
+	width: 23%;
+}
+.wigtitle{
+color:#61380B;
+font-weight: bold;
+}
+.slider {
+	width: 80%;
+	margin: 0 15px 0;
+}
+.jquibt{font-size: .8em;}
+.jqui{font-size: 12px;}
+.info {
+	border-bottom: 1px #38C solid;
+	margin-bottom: 2em;
+}
+.num {
+	color: #175086;
+}
+#simpleSearch {
+display: block;
+position: relative;
+width: 85%;
+height: 1.75em;
+margin-top: 0.65em;
+border: solid 1px #ddd;
+border-radius: 4px;
+color: black;
+background-color: #f9f9f9;
+}
+#simpleSearch #address {
+position: absolute;
+top: 5%;
+left: 0;
+width: 90%;
+height: 90%;
+margin: 0;
+padding: 0;
+padding-left: 1em;
+padding-top: 0.2em;
+padding-bottom: 0.2em;
+outline: none;
+border: none;
+font-size: 14px;
+background-color: transparent;
+}
+#simpleSearch #searchButton {
+position: absolute;
+width: 10%;
+right: 0;
+top: 10%;
+padding: 0;
+padding-top: 0.3em;
+padding-bottom: 0.2em;
+padding-right: 0.4em;
+margin: 0;
+border: none;
+background-color: transparent;
+}
+#simpleSearch #searchButton > img {
+margin: 0;
+border: none;
+padding: 0;
+vertical-align: middle;
+}
+#radio {
+	margin-top: .4em;
+}
+label[for^='radio'] span:before{
+	content:"";
+	position:absolute;
+	left:.5em;
+	top:.5em;
+	width:.5em;
+	height:1em;
+}
+label[for='radio1'] span:before{
+	background-color:#FF8000;
+}
+label[for='radio2'] span:before{
+	background-color:#A5DF00;
+}
+label.forrad span{
+	text-indent: .5em;
+}
+#button{
+margin: 2em 1em;
+}
+#error{
+	display:none;
+	position:absolute;
+	font-size:.8em;
+}
+a, a:visited {
+	text-decoration: none;
+	color: #03E;
+}
+#footer {
+	font-size: 0.5em;
+	margin: 2em;
+	padding-top: 1em;
+	border-top: 1px #EEE solid;
+	text-align: center;
+}
+#chart-svg {
+	width: 80%;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+</style>
+<script>
+var map;
+var markera;
+var markerb;
+var markerc;
+var markerd;
+var geocoder;
+var visiblemark=false;
+var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];
+var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
+var dearth = 12745594;
+var pi180 = 0.0174532925199;
+//SVG Width and height
+var w = $(document.body).width() * 0.75;
+var h = 400;
+var padding = 32;
+var timeoutID = -1;
+function initialize() {
+	var mapOptions = {
+		zoom: 12,
+		center: new google.maps.LatLng(31.231, 121.474),
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		streetViewControl: false
+	}
+	geocoder = new google.maps.Geocoder();
+	google.maps.visualRefresh = true;
+	map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+	markera = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'A',
+		visible: false,
+		draggable: true
+	});
+	markerb = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'B',
+		visible: false,
+		draggable: true
+	});
+	markerc = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'C',
+		visible: false,
+		draggable: true
+	});
+	markerd = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'D',
+		visible: false,
+		draggable: true
+	});
+	var poly = new google.maps.Polyline({
+		path: [markera.getPosition(), markerb.getPosition()],
+		map: map,
+		strokeColor: "#FF8000",
+		strokeOpacity: 1.0,
+		strokeWeight: 3,
+		visible: false,
+		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
+			offset: '5px', repeat: '10px'}]
+	});
+	var polyb = new google.maps.Polyline({
+		path: [markera.getPosition(), markerb.getPosition()],
+		map: map,
+		strokeColor: "#A5DF00",
+		strokeOpacity: 1.0,
+		strokeWeight: 3,
+		visible: false,
+		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
+			offset: '5px', repeat: '10px'}]
+	});
+	google.maps.event.addListener(map, 'click', function (event) {
+	if ($("[name='radio']:checked").val()=="wa"){
+		if (!markera.getVisible()) {
+			markera.setPosition(event.latLng);
+			markera.setVisible(true);
+		} else if (!markerb.getVisible()) {
+			markerb.setPosition(event.latLng);
+			markerb.setVisible(true);
+			poly.setPath([markera.getPosition(), markerb.getPosition()]);
+			poly.setVisible(true);
+		} else {
+			markera.setPosition(event.latLng);
+			poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		}
+	}else{
+		if (!markerc.getVisible()) {
+			markerc.setPosition(event.latLng);
+			markerc.setVisible(true);
+			visiblemark=true;
+		} else if (!markerd.getVisible()) {
+			markerd.setPosition(event.latLng);
+			markerd.setVisible(true);
+			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+			polyb.setVisible(true);
+			visiblemark=true;
+		} else {
+			markerc.setPosition(event.latLng);
+			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		}
+	}
+	});
+	google.maps.event.addListener(map, 'rightclick', function (event) {
+		if ($("[name='radio']:checked").val()=="wa"){
+		markerb.setPosition(event.latLng);
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		}else{
+		markerd.setPosition(event.latLng);
+		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		}
+	});
+	google.maps.event.addListener(markera, 'position_changed', function () {
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		$("#distance").text(dist());AutoRedraw();
+	});
+	google.maps.event.addListener(markerb, 'position_changed', function () {
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		$("#distance").text(dist());AutoRedraw();
+	});
+	google.maps.event.addListener(markerc, 'position_changed', function () {
+		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		$("#distanceb").text(distb());AutoRedraw();
+   });
+	google.maps.event.addListener(markerd, 'position_changed', function () {
+		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		$("#distanceb").text(distb());AutoRedraw();
+	});
+	$("#radiogroup").change(function(){
+	if ($("[name='radio']:checked").val()=="wa"){
+	markera.setVisible(true);
+	markerb.setVisible(true);
+	markerc.setVisible(false);
+	markerd.setVisible(false);
+	poly.setVisible(true);
+	}else{
+	markera.setVisible(false);
+	markerb.setVisible(false);
+	if (visiblemark){
+	markerc.setVisible(true);
+	markerd.setVisible(true);
+	polyb.setVisible(true);
+	}
+	}
+});
+}
+  function codeAddress() {
+	var saddress = document.getElementById("address").value;
+	if (saddress!="") {
+	geocoder.geocode( {address: saddress, latLng: map.getCenter()}, function(results, status) {
+	  if (status == google.maps.GeocoderStatus.OK) {
+		map.panTo(results[0].geometry.location);
+		markera.setPosition(map.getCenter());
+		markerb.setPosition(map.getCenter());
+		markerc.setPosition(map.getCenter());
+		markerd.setPosition(map.getCenter());
+	  } else {
+		$("#errdiv p").text(function (){
+		if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
+		return "找不到地址。";
+		}else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+		return "超出配额。";
+		}else if (status == google.maps.GeocoderStatus.REQUEST_DENIED) {
+		return "请求被拒绝。";
+		}else if (status == google.maps.GeocoderStatus.INVALID_REQUEST) {
+		return "缺少查询内容。";
+		}
+		});
+		$("#error").show();
+		$("#error").delay(5000);
+		$("#error").fadeOut(500);
+	  }
+	});};
+  }
+function dist() {
+	var alat = markera.getPosition().lat() * pi180;
+	var alng = markera.getPosition().lng() * pi180;
+	var blat = markerb.getPosition().lat() * pi180;
+	var blng = markerb.getPosition().lng() * pi180;
+	var k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
+		.cos(alat) * Math.sin(Math.abs(alng - blng)), 2));
+	var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+	if (l>500){$("#distance").css("color","red")
+	}else{$("#distance").css("color","#175086")}; 
+	return l;
+}
+function distb() {
+	var clat = markerc.getPosition().lat() * pi180;
+	var clng = markerc.getPosition().lng() * pi180;
+	var dlat = markerd.getPosition().lat() * pi180;
+	var dlng = markerd.getPosition().lng() * pi180;
+	var j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
+		.cos(clat) * Math.sin(Math.abs(clng - dlng)), 2));
+	var s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
+	if (s>500){$("#distanceb").css("color","red")
+	}else{$("#distanceb").css("color","#175086")}; 
+	return s;
+}
+
+function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln,Hg) {
+//function Calc(daynum,time,h1,h2,ala,aln,bla,bln,cla,cln,dla,dln) {
+//daynum -> in one year
+//time -> 24h, DEG
+//ala,aln,bla,bln,cla,cln,dla,dln -> RAD!!!!!
+var avgla=(ala+bla+cla+dla)/4;
+var avgln=(aln+bln+cln+dln)/4;
+var localtime=time+(avgln/pi180-120)/15;
+var a=Math.PI*2*(daynum-1)/365;
+var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
+var ho=Math.asin(Math.cos(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)*Math.cos(phi)+Math.sin(avgla)*Math.sin(phi));
+if (ho>0){
+	var cosA=(Math.sin(ho)*Math.sin(avgla)-Math.sin(phi))/Math.cos(ho)/Math.cos(avgla);
+	if (localtime>=12){alpha=Math.acos(cosA)}else{alpha=-Math.acos(cosA)};
+	if (ala!=bla){
+		n=Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)*Math.cos(Math.abs(aln-bln))),2)+Math.pow((Math.cos(ala)*Math.sin(Math.abs(aln-bln))),2))/2));
+		
+	}else{n=0};
+	if (ala<bla){n=Math.PI-n}; if (aln<bln){n=-n};
+	//if (Math.sin(alpha-n)>0){return 0;}
+	if (cla!=dla){
+		m=Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)*Math.cos(Math.abs(cln-dln))),2)+Math.pow((Math.cos(cla)*Math.sin(Math.abs(cln-dln))),2))/2));
+	}else{m=0};
+	if (cla<dla){m=Math.PI-m}; if (cln<dln){m=-m};
+	mu=2*n-alpha;
+	//if (Math.sin(mu-m)>0){return 0;}
+	//if (daynum==0 && time%2==0){lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu)}
+	lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu);
+	gamma=-Math.PI/2+m-2*n+alpha;
+	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
+	B=0.15*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
+}else{
+	return -1;
+};
+if (lambda<Math.PI/12){
+	if (B>=2000){return 5;};
+}else if (lambda>=Math.PI/12 && lambda<=Math.PI/6){
+	if (B>=2000 && B<4000){
+		return 2;
+	}else if (B>=4000 && B<6000){
+		return 3;
+	}else if (B>=6000){
+		return 4;
+	};
+}else if (lambda>Math.PI/6){
+	return 1;
+};
+return 0;
+}
+var pab1=[], pab2=[]
+function lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu){
+	L=Hg/Math.tan(ho);
+	ala2=ala-(L*Math.cos(Math.PI-mu)*2/dearth);
+	aln2=aln+(L*Math.sin(Math.PI-mu)*2/dearth);
+	y1=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(bla)-Math.cos(bla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(bla)*Math.sin(Math.abs(aln-bln)),2))/2);
+	x1=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(bla)-Math.sin(ala),2)+Math.pow(Math.cos(bla)-Math.cos(ala),2))/2);
+	if (aln>bln){y1=-y1}; if (ala<bla){x1=-x1};
+	console.log('mu='+mu/pi180)
+	console.log('L='+L)
+	console.log('x1='+x1)
+	bla2=bla-(L*Math.cos(Math.PI-mu)*2/dearth);
+	bln2=bln+(L*Math.sin(Math.PI-mu)*2/dearth);
+	console.log('bla2='+bla2/pi180)
+	pab1.push(new google.maps.Polyline({
+		path: [new google.maps.LatLng(ala/pi180, aln/pi180), new google.maps.LatLng(ala2/pi180, aln2/pi180)],
+		map: map,
+		strokeColor: "#FF8000",
+		strokeOpacity: 1.0,
+		strokeWeight: 2,
+		visible: true,
+	}));
+	pab2.push(new google.maps.Polyline({
+		path: [new google.maps.LatLng(bla/pi180, bln/pi180), new google.maps.LatLng(bla2/pi180, bln2/pi180)],
+		map: map,
+		strokeColor: "#A5DF00",
+		strokeOpacity: 1.0,
+		strokeWeight: 2,
+		visible: true,
+	}));
+}
+
+function AutoRedraw(){
+	if ($("#autocalc").is(':checked') && visiblemark){
+	if (timeoutID!=-1){clearTimeout(timeoutID)};
+	DrawChart(3,5);
+	timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
+	};
+}
+function DrawChart(densityx,densityy){
+var EffectData=new Array(7);
+for(i=0;i<7;i++){
+	 EffectData[i]=[[]];
+};
+var EffectDataEnd=new Array(7);
+for(i=0;i<7;i++){
+	 EffectDataEnd[i]=[[]];
+};
+alat = markera.getPosition().lat() * pi180;
+alng = markera.getPosition().lng() * pi180;
+blat = markerb.getPosition().lat() * pi180;
+blng = markerb.getPosition().lng() * pi180;
+clat = markerc.getPosition().lat() * pi180;
+clng = markerc.getPosition().lng() * pi180;
+dlat = markerd.getPosition().lat() * pi180;
+dlng = markerd.getPosition().lng() * pi180;
+//wallheight = parseInt($("#wallh-n").text());
+var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math.cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
+var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+$("#grapharea").empty();
+if (l>1500){return 0}; 
+if (dist()>500 || distb()>500){return 0}; 
+
+//Create scale functions
+var xScale = d3.scale.linear()
+	.domain([0, 1439])
+	.range([padding, w - padding * 2]);
+var yScale = d3.scale.linear()
+	.domain([0, 364])
+	.range([h - padding, padding]);
+var graph = d3.select("#grapharea");
+var lineFunction = d3.svg.line()
+				   .x(function(d) {return xScale(d[0]);})
+				   .y(function(d) {return yScale(d[1]);})
+				   .interpolate("linear-closed");
+h1 = $("#wallh").slider("value");
+//h2 = $("#planeh").slider("value");
+var lastnum=-1;
+var nownum=-1;
+var lastcount=[0,0,0,0,0,0];
+var closeda=[0,0,0,0,0,0];
+var nowtime=[[],[],[],[],[],[]];
+var nowend=[[],[],[],[],[],[]];
+var addcount=0;
+
+
+if (pab1.length!=0){
+for (k = 0; k < pab1.length; k++){pab1[k].setMap(null);};
+for (k = 0; k < pab2.length; k++){pab2[k].setMap(null);};
+pab1.length = 0;pab1=[]
+pab2.length = 0;pab2=[]}
+Calc(1,12,alat,alng,blat,blng,clat,clng,dlat,dlng,h1);
+
+/*
+for (i=0;i<365;i+=densityy){
+	nowtime=[[],[],[],[],[],[]];
+	nowend=[[],[],[],[],[],[]];
+	lastnum=-1;
+	for (j=0;j<1440;j+=densityx){
+		nownum=0;//Calc(i,j/60,alat,alng,blat,blng,clat,clng,dlat,dlng,wallheight);
+		if (lastnum!=nownum){
+			if (lastnum!=-1){nowend[lastnum].push(j-0.5);};
+			if (nownum!=-1){nowtime[nownum].push(j-0.5);}
+		}
+		lastnum=nownum;
+	};
+	for (j=0;j<6;j++){  
+		if (nowtime[j].length!=lastcount[j]){
+			addcount=lastcount[j]+nowtime[j].length;
+			if (i>0){closeda[j]+=lastcount[j];}
+			for (k=0;k<addcount;k++){
+				EffectData[j].push(new Array());
+				EffectDataEnd[j].push(new Array());
+			}
+		}
+		if (nowtime[j].length!=lastcount[j] && closeda[j]>0){
+			if (EffectDataEnd[j][closeda[j]-1].length>0){
+				for (k=0;k<lastcount[j];k++){
+					EffectData[j][closeda[j]-lastcount[j]+k][EffectData[j][closeda[j]-lastcount[j]+k].length-1][1]+=densityy/2;
+					EffectDataEnd[j][closeda[j]-lastcount[j]+k][EffectDataEnd[j][closeda[j]-lastcount[j]+k].length-1][1]+=densityy/2;
+				}
+				for (k=0;k<nowtime[j].length;k++){
+					EffectData[j][closeda[j]+k].push([nowtime[j][k],i-densityy/2]);
+					EffectDataEnd[j][closeda[j]+k].push([nowend[j][k],i-densityy/2]);
+				}
+			}
+		}else{
+		for (k=0;k<nowtime[j].length;k++){
+			EffectData[j][closeda[j]+k].push([nowtime[j][k],i]);
+			EffectDataEnd[j][closeda[j]+k].push([nowend[j][k],i]);
+		}}
+		lastcount[j]=nowtime[j].length;
+	}
+};
+for(i=0;i<6;i++){
+	for (j=0;j<EffectData[i].length;j++){
+		EffectData[i][j]=EffectData[i][j].concat(EffectDataEnd[i][j].reverse());
+		if (EffectData[i][j].length>1){
+		graph.append("path")
+		.attr("d", lineFunction(EffectData[i][j]))
+		.attr("fill", Palette[i])
+		.attr("stroke", Palette[i])
+		.attr("stroke-width", 1);}
+	}
+}*/
+var nowDate=new Date();
+var startD = new Date(nowDate.getFullYear(), 0, 0);
+graph.append("circle")
+	.attr("cx",xScale(nowDate.getHours()*60+nowDate.getMinutes()))
+	.attr("cy",yScale(Math.floor((nowDate-startD)/86400000)))
+	.attr("r",2)
+	.attr("fill","#0B3861")
+}
+$(document).ready(function() {
+var i=0;var j=0;var k=0;
+initialize();
+	$("#wallh").slider({
+		orientation: "horizontal",
+		range: "min",
+		max: 120,
+		value: 20,
+		slide: function(event, ui) {$("#wallh-n").text( ui.value );},
+		change: function(event, ui) {$("#wallh-n").text( ui.value );}
+	});
+	$("#planeh").slider({
+		orientation: "horizontal",
+		range: "min",
+		max: 100,
+		value: 10,
+		slide: function(event, ui) {$("#planeh-n").text( ui.value );},
+		change: function(event, ui) {$("#planeh-n").text( ui.value );}
+	});
+	$("#radio").buttonset();
+	$("#btncalc").button();
+	$("#autocalc").button();
+	$("#btncalc").click(function(){
+		if (visiblemark){
+		DrawChart(1,1);
+		$("html, body").scrollTop($(document).height());
+		}
+	});
+	var xAxScale = d3.scale.linear().domain([0, 24]).range([padding, w - padding * 2]);
+	var yAxScale = d3.scale.linear().domain([1,13]).range([h - padding, padding]);
+	var xAxis = d3.svg.axis().scale(xAxScale).orient("bottom").ticks(12)
+				  .tickFormat(function(d) {if (d!=24){return d;}else{return "小时";}});
+	var yAxis = d3.svg.axis().scale(yAxScale).orient("left").ticks(12)
+				  .tickFormat(function(d) {if (d!=13){return d;}else{return "月";}});
+	var svg = d3.select("#chart-svg").append("svg").attr("width", w).attr("height", h);
+	svg.append("rect").attr("x", padding).attr("y", padding).attr("width", w - padding*3)
+				.attr("height", h - padding*2).attr("fill","#F0F0F0");
+	svg.append("g").attr("class", "axis ax")
+		.attr("transform", "translate(0," + (h - padding) + ")").call(xAxis);
+	svg.append("g").attr("class", "axis ay")
+		.attr("transform", "translate(" + padding + ",0)").call(yAxis);
+	svg.append("g").attr("id", "grapharea");
+	var lgsvg = d3.select("#chart-legend").append("svg").attr("width", $(document.body).width() * 0.2).attr("height", h-100);
+	lgsvg.selectAll("rect")
+		.data(Palette)
+		.enter()
+		.append("rect")
+		.attr("x", 2)
+		.attr("y", function(d,i) {return i*25;})
+		.attr("width", 30)
+		.attr("height", 20)
+		.attr("fill", function(d) {return d;});
+	lgsvg.selectAll("text")
+		.data(efname)
+		.enter()
+		.append("text")
+		.attr("x", 40)
+		.attr("y", function(d,i) {return i*25+16;})
+		.style("font-size","16px")
+		.text(function(d) {return d;});
+	lgsvg.append("rect")
+		.attr("x", 2)
+		.attr("y", 150)
+		.attr("width", 30)
+		.attr("height", 20)
+		.attr("fill","#F0F0F0");
+	lgsvg.append("text")
+		.attr("x", 40)
+		.attr("y", 166)
+		.style("font-size","16px")
+		.text("无日光");
+	lgsvg.append("circle")
+		.attr("cx", 17)
+		.attr("cy", 185)
+		.attr("r", 2)
+		.attr("fill","#0B3861")
+	lgsvg.append("text")
+		.attr("x", 40)
+		.attr("y", 191)
+		.style("font-size","16px")
+		.text("当前时间");
+});
+</script>
+</head>
+<body>
+  <!--[if lt IE 9]>
+  <div style="border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
+	<div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
+	<div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
+		<p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。网页可能无法使用。</p>
+		<p style="font-size: 12px; margin-top: 6px; line-height: 12px; text-align: center;">请升级您的浏览器（IE9及以上或其他浏览器）来获得更好的浏览体验。</p>
+	</div>
+  </div>
+  <![endif]-->
+<h1>玻璃幕墙光反射影响预测工具</h1>
+<div class="info">
+<p>在地图上通过左右键点击或移动标识来确定目标墙体的位置。</p>
+<p>时区默认UTC+8时区（北京时间）。因为未考虑气候、地形、建筑实际结构、幕墙曲度、中间阻挡物等
+，计算结果为预计最大值。计算结果仅供参考。</p></div>
+<div id="app">
+<div id="tools">
+<form id="searchform" onsubmit="codeAddress();return false;">
+<div id="simpleSearch">
+<input name="search" placeholder="查找地址" title="查找地址" id="address">
+<button type="submit" name="button" title="查找地址" id="searchButton" onclick="codeAddress()">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAAAAAC4QtCeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAJ0Uk5TAP9bkSK1AAAAaklEQVQI12P4///u3NrauXf/AwHD//05YLAfxLmbl7/n48c9+Xn3gZxJYDGg/BQgpyznC4jzJacMmVOMrgxowMFPnw5CDIAZnbMLxAFaWl09txrEY/gPAe87gTwY5//PmTmr4Jz/f699BgAmIHmp1XxJagAAAABJRU5ErkJggg==" alt="查找地址" width="12" height="13"></button>
+</div>
+</form>
+<h2>计算设置</h2>
+<p><form id="radiogroup">
+  <span class="wigtitle">更改地图上墙面：</span>
+  <div class="jquibt" id="radio">
+	<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1">玻璃幕墙</label>
+	<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2">受照射墙面</label>
+  </div>
+</form></p>
+<p><span class="wigtitle">玻璃幕墙宽：</span><span id="distance" class="num">0</span>米</p>
+<p><span class="wigtitle">受照射墙宽：</span><span id="distanceb" class="num">0</span>米</p>
+<p><span class="wigtitle">玻璃幕墙高度：</span><span id="wallh-n" class="num">20</span>米<div id="wallh" class="slider jqui"></div>
+</p>
+<p><span class="wigtitle">受照射面高度：</span><span id="planeh-n" class="num">10</span>米<div id="planeh" class="slider jqui"></div>
+</p>
+<p><div class="jquibt" id="button">
+	<button id="btncalc" name="button" title="绘图更精确">计算</button>
+	<input type="checkbox" id="autocalc" name="autocalc" checked="checked"><label for="autocalc">自动计算</label>
+</div>
+</p>
+<div class="ui-widget" id="errdiv">
+	<div class="ui-state-highlight ui-corner-all" style="padding: 0 .7em;" id="error"><p></p></div>
+</div>
+</div>
+<div id="map-canvas"></div>
+<div id="chart-legend">
+<h2>图例</h2>
+<p><span class="wigtitle" style="background-color:#F0F0F0">空白</span>：位置不正确或无影响。</p>
+</div>
+<div id="chart-svg">
+</div>
+</div>
+<div id="footer">
+制作：……
+</div>
+</body>
+</html>

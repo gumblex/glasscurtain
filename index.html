@@ -5,10 +5,10 @@
 <meta http-equiv="Content-Language" content="zh-cn">
 <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>玻璃幕墙光反射影响预测工具</title>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
 <script src="jquery-1.10.2.min.js"></script>
 <script src="jquery-ui-1.10.3.custom.min.js"></script>
 <link rel="stylesheet" type="text/css" href="jquery-ui-1.10.3.custom.min.css">
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
 <script src="d3.v3.min.js"></script>
 <style>
 body {
@@ -24,11 +24,11 @@ h1 {
 }
 h2 { font-size: 1.25em }
 p {
-    margin: 0.5em 0;
+	margin: 0.5em 0;
 }
 #map-canvas {
-    height: 500px;
-    width: 70%;
+	height: 500px;
+	width: 70%;
 }
 #tools {
 	float: right;
@@ -36,8 +36,8 @@ p {
 	width: 25%;
 }
 #chart-svg {
-    height: 400px;
-    width: 75%;
+	height: 400px;
+	width: 75%;
 }
 #chart-legend {
 	float: right;
@@ -55,8 +55,8 @@ font-weight: bold;
 .jquibt{font-size: .8em;}
 .jqui{font-size: 12px;}
 .info {
-    border-bottom: 1px #38C solid;
-    margin-bottom: 2em;
+	border-bottom: 1px #38C solid;
+	margin-bottom: 2em;
 }
 .num {
 	color: #175086;
@@ -110,7 +110,10 @@ vertical-align: middle;
 #radio {
 	margin-top: .4em;
 }
-label[for^='radio'] span:before{
+#btnturnw {
+	border-bottom: 2px solid #FF8000;
+}
+#lbradio1 span:before,#lbradio2 span:before{
 	content:"";
 	position:absolute;
 	left:.5em;
@@ -118,10 +121,10 @@ label[for^='radio'] span:before{
 	width:.5em;
 	height:1em;
 }
-label[for='radio1'] span:before{
+#lbradio1 span:before{
 	background-color:#FF8000;
 }
-label[for='radio2'] span:before{
+#lbradio2 span:before{
 	background-color:#A5DF00;
 }
 label.forrad span{
@@ -136,8 +139,8 @@ margin: 2em 1em;
 	font-size:.8em;
 }
 a, a:visited {
-    text-decoration: none;
-    color: #03E;
+	text-decoration: none;
+	color: #03E;
 }
 #footer {
 	font-size: 0.5em;
@@ -174,115 +177,120 @@ var h = 400;
 var padding = 32;
 var timeoutID = -1;
 function initialize() {
-    var mapOptions = {
-        zoom: 12,
-        center: new google.maps.LatLng(31.231, 121.474),
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        streetViewControl: false
-    }
-	geocoder = new google.maps.Geocoder();
-    google.maps.visualRefresh = true;
-    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
-    markera = new google.maps.Marker({
-        position: map.getCenter(),
-        map: map,
-        title: 'A',
-        visible: false,
-        draggable: true
-    });
-    markerb = new google.maps.Marker({
-        position: map.getCenter(),
-        map: map,
-        title: 'B',
-        visible: false,
-        draggable: true
-    });
-    markerc = new google.maps.Marker({
-        position: map.getCenter(),
-        map: map,
-        title: 'C',
-        visible: false,
-        draggable: true
-    });
-    markerd = new google.maps.Marker({
-        position: map.getCenter(),
-        map: map,
-        title: 'D',
-        visible: false,
-        draggable: true
-    });
-    var poly = new google.maps.Polyline({
-        path: [markera.getPosition(), markerb.getPosition()],
-        map: map,
-        strokeColor: "#FF8000",
-        strokeOpacity: 1.0,
-        strokeWeight: 3,
-        visible: false
-    });
-    var polyb = new google.maps.Polyline({
-        path: [markera.getPosition(), markerb.getPosition()],
-        map: map,
-        strokeColor: "#A5DF00",
-        strokeOpacity: 1.0,
-        strokeWeight: 3,
-        visible: false
-    });
-    google.maps.event.addListener(map, 'click', function (event) {
-	if ($("[name='radio']:checked").val()=="wa"){
-        if (!markera.getVisible()) {
-            markera.setPosition(event.latLng);
-            markera.setVisible(true);
-        } else if (!markerb.getVisible()) {
-            markerb.setPosition(event.latLng);
-            markerb.setVisible(true);
-            poly.setPath([markera.getPosition(), markerb.getPosition()]);
-            poly.setVisible(true);
-        } else {
-            markera.setPosition(event.latLng);
-            poly.setPath([markera.getPosition(), markerb.getPosition()]);
-        }
-	}else{
-        if (!markerc.getVisible()) {
-            markerc.setPosition(event.latLng);
-            markerc.setVisible(true);
-			visiblemark=true;
-        } else if (!markerd.getVisible()) {
-            markerd.setPosition(event.latLng);
-            markerd.setVisible(true);
-            polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-            polyb.setVisible(true);
-			visiblemark=true;
-        } else {
-            markerc.setPosition(event.latLng);
-            polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-        }
+	var mapOptions = {
+		zoom: 12,
+		center: new google.maps.LatLng(31.231, 121.474),
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		streetViewControl: false
 	}
-    });
-    google.maps.event.addListener(map, 'rightclick', function (event) {
-		if ($("[name='radio']:checked").val()=="wa"){
-        markerb.setPosition(event.latLng);
-        poly.setPath([markera.getPosition(), markerb.getPosition()]);
-		}else{
-        markerd.setPosition(event.latLng);
-        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+	geocoder = new google.maps.Geocoder();
+	google.maps.visualRefresh = true;
+	map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+	markera = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'A',
+		visible: false,
+		draggable: true
+	});
+	markerb = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'B',
+		visible: false,
+		draggable: true
+	});
+	markerc = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'C',
+		visible: false,
+		draggable: true
+	});
+	markerd = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'D',
+		visible: false,
+		draggable: true
+	});
+	var poly = new google.maps.Polyline({
+		path: [markera.getPosition(), markerb.getPosition()],
+		map: map,
+		strokeColor: "#FF8000",
+		strokeOpacity: 1.0,
+		strokeWeight: 3,
+		visible: false,
+		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
+			offset: '5px', repeat: '10px'}]
+	});
+	var polyb = new google.maps.Polyline({
+		path: [markera.getPosition(), markerb.getPosition()],
+		map: map,
+		strokeColor: "#A5DF00",
+		strokeOpacity: 1.0,
+		strokeWeight: 3,
+		visible: false,
+		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
+			offset: '5px', repeat: '10px'}]
+	});
+	google.maps.event.addListener(map, 'click', function (event) {
+	if ($("[name='radio']:checked").val()=="wa"){
+		if (!markera.getVisible()) {
+			markera.setPosition(event.latLng);
+			markera.setVisible(true);
+		} else if (!markerb.getVisible()) {
+			markerb.setPosition(event.latLng);
+			markerb.setVisible(true);
+			poly.setPath([markera.getPosition(), markerb.getPosition()]);
+			poly.setVisible(true);
+		} else {
+			markera.setPosition(event.latLng);
+			poly.setPath([markera.getPosition(), markerb.getPosition()]);
+			
 		}
-    });
-    google.maps.event.addListener(markera, 'position_changed', function () {
-        poly.setPath([markera.getPosition(), markerb.getPosition()]);
-        $("#distance").text(dist());AutoRedraw();
-    });
-    google.maps.event.addListener(markerb, 'position_changed', function () {
-        poly.setPath([markera.getPosition(), markerb.getPosition()]);
-        $("#distance").text(dist());AutoRedraw();
-    });
-    google.maps.event.addListener(markerc, 'position_changed', function () {
-        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-        $("#distanceb").text(distb());AutoRedraw();
+	}else{
+		if (!markerc.getVisible()) {
+			markerc.setPosition(event.latLng);
+			markerc.setVisible(true);
+			visiblemark=true;
+		} else if (!markerd.getVisible()) {
+			markerd.setPosition(event.latLng);
+			markerd.setVisible(true);
+			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+			polyb.setVisible(true);
+			visiblemark=true;
+		} else {
+			markerc.setPosition(event.latLng);
+			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		}
+	}
+	});
+	google.maps.event.addListener(map, 'rightclick', function (event) {
+		if ($("[name='radio']:checked").val()=="wa"){
+		markerb.setPosition(event.latLng);
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		}else{
+		markerd.setPosition(event.latLng);
+		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		}
+	});
+	google.maps.event.addListener(markera, 'position_changed', function () {
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		$("#distance").text(dist());AutoRedraw();
+	});
+	google.maps.event.addListener(markerb, 'position_changed', function () {
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		$("#distance").text(dist());AutoRedraw();
+	});
+	google.maps.event.addListener(markerc, 'position_changed', function () {
+		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		$("#distanceb").text(distb());AutoRedraw();
    });
-    google.maps.event.addListener(markerd, 'position_changed', function () {
-        polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
-        $("#distanceb").text(distb());AutoRedraw();
-    });
+	google.maps.event.addListener(markerd, 'position_changed', function () {
+		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+		$("#distanceb").text(distb());AutoRedraw();
+	});
 	$("#radiogroup").change(function(){
 	if ($("[name='radio']:checked").val()=="wa"){
 	markera.setVisible(true);
@@ -302,16 +310,16 @@ function initialize() {
 });
 }
   function codeAddress() {
-    var saddress = document.getElementById("address").value;
+	var saddress = document.getElementById("address").value;
 	if (saddress!="") {
-    geocoder.geocode( {address: saddress, latLng: map.getCenter()}, function(results, status) {
-      if (status == google.maps.GeocoderStatus.OK) {
-        map.panTo(results[0].geometry.location);
+	geocoder.geocode( {address: saddress, latLng: map.getCenter()}, function(results, status) {
+	  if (status == google.maps.GeocoderStatus.OK) {
+		map.panTo(results[0].geometry.location);
 		markera.setPosition(map.getCenter());
 		markerb.setPosition(map.getCenter());
 		markerc.setPosition(map.getCenter());
 		markerd.setPosition(map.getCenter());
-      } else {
+	  } else {
 		$("#errdiv p").text(function (){
 		if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
 		return "找不到地址。";
@@ -326,34 +334,48 @@ function initialize() {
 		$("#error").show();
 		$("#error").delay(5000);
 		$("#error").fadeOut(500);
-      }
-    });};
+	  }
+	});};
   }
 function dist() {
-    var alat = markera.getPosition().lat() * pi180;
-    var alng = markera.getPosition().lng() * pi180;
-    var blat = markerb.getPosition().lat() * pi180;
-    var blng = markerb.getPosition().lng() * pi180;
-    var k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
-        .cos(alat) * Math.sin(Math.abs(alng - blng)), 2));
-    var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+	var alat = markera.getPosition().lat() * pi180;
+	var alng = markera.getPosition().lng() * pi180;
+	var blat = markerb.getPosition().lat() * pi180;
+	var blng = markerb.getPosition().lng() * pi180;
+	var k = Math.sqrt(Math.pow(Math.sin(blat) - Math.sin(alat), 2) + Math.pow(Math.cos(blat) - Math.cos(alat) * Math.cos(Math.abs(alng - blng)), 2) + Math.pow(Math
+		.cos(alat) * Math.sin(Math.abs(alng - blng)), 2));
+	var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
 	if (l>500){$("#distance").css("color","red")
 	}else{$("#distance").css("color","#175086")}; 
-    return l;
+	return l;
 }
 function distb() {
-    var clat = markerc.getPosition().lat() * pi180;
-    var clng = markerc.getPosition().lng() * pi180;
-    var dlat = markerd.getPosition().lat() * pi180;
-    var dlng = markerd.getPosition().lng() * pi180;
-    var j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
-        .cos(clat) * Math.sin(Math.abs(clng - dlng)), 2));
-    var s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
+	var clat = markerc.getPosition().lat() * pi180;
+	var clng = markerc.getPosition().lng() * pi180;
+	var dlat = markerd.getPosition().lat() * pi180;
+	var dlng = markerd.getPosition().lng() * pi180;
+	var j = Math.sqrt(Math.pow(Math.sin(clat) - Math.sin(clat), 2) + Math.pow(Math.cos(dlat) - Math.cos(clat) * Math.cos(Math.abs(clng - dlng)), 2) + Math.pow(Math
+		.cos(clat) * Math.sin(Math.abs(clng - dlng)), 2));
+	var s = Math.round(dearth * Math.asin(j / 2) * 100) / 100;
 	if (s>500){$("#distanceb").css("color","red")
 	}else{$("#distanceb").css("color","#175086")}; 
-    return s;
+	return s;
 }
-function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln) {
+
+function pointInPolygon(x,y,polyX,polyY) {
+	var polySides=4;
+	var i, j=polySides-1;
+	var oddNodes=false;
+	for (i=0; i<polySides; i++) {
+	if ((polyY[i]< y && polyY[j]>=y
+	||   polyY[j]< y && polyY[i]>=y)
+	&&  (polyX[i]<=x || polyX[j]<=x)) {
+	  oddNodes^=(polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])<x);}
+	j=i; }
+	return oddNodes;
+}
+
+function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln,Hg) {
 //function Calc(daynum,time,h1,h2,ala,aln,bla,bln,cla,cln,dla,dln) {
 //daynum -> in one year
 //time -> 24h, DEG
@@ -364,17 +386,47 @@ var localtime=time+(avgln/pi180-120)/15;
 var a=Math.PI*2*(daynum-1)/365;
 var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
 var ho=Math.asin(Math.cos(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)*Math.cos(phi)+Math.sin(avgla)*Math.sin(phi));
-//ho2=Math.acos();
-////////////////////////////////determine whether in the range!!!!!!!!!!!!!!!!!
 if (ho>0){
-	var alpha=0-Math.asin(-Math.sin(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)/Math.cos(ho));
-	if (ala-bla!=0){
-		n=Math.abs(bla-ala)/(bla-ala)*Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)*Math.cos(Math.abs(aln-bln))),2)+Math.pow((Math.cos(ala)*Math.sin(Math.abs(aln-bln))),2))/2));
-		}else{n=0};
-	if (cla-dla!=0){
-		m=Math.abs(dla-cla)/(dla-cla)*Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)*Math.cos(Math.abs(cln-dln))),2)+Math.pow((Math.cos(cla)*Math.sin(Math.abs(cln-dln))),2))/2));
-		}else{m=0};
-	gamma=Math.PI/2-m+2*n-alpha;
+	var cosA=(Math.sin(ho)*Math.sin(avgla)-Math.sin(phi))/Math.cos(ho)/Math.cos(avgla);
+	if (localtime>=12){alpha=Math.acos(cosA)}else{alpha=-Math.acos(cosA)};
+	if (ala!=bla){
+		n=Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)*Math.cos(Math.abs(aln-bln))),2)+Math.pow((Math.cos(ala)*Math.sin(Math.abs(aln-bln))),2))/2));
+	}else{n=0};
+	if (ala<bla){n=Math.PI-n}; if (aln<bln){n=-n};
+	if (Math.sin(alpha-n)>0){return 0;}
+	if (cla!=dla){
+		m=Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)*Math.cos(Math.abs(cln-dln))),2)+Math.pow((Math.cos(cla)*Math.sin(Math.abs(cln-dln))),2))/2));
+	}else{m=0};
+	if (cla<dla){m=Math.PI-m}; if (cln<dln){m=-m};
+	mu=2*n-alpha;
+	L=Hg/Math.tan(ho);
+	if (daynum==0  && time==11){console.log(L)};
+	ala2=ala-(L*Math.cos(Math.PI-mu)*2/dearth);
+	aln2=aln+(L*Math.sin(Math.PI-mu)*2/dearth);
+	bla2=bla-(L*Math.cos(Math.PI-mu)*2/dearth);
+	bln2=bln+(L*Math.sin(Math.PI-mu)*2/dearth);
+	x1=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(bla)-Math.sin(ala),2)+Math.pow(Math.cos(bla)-Math.cos(ala),2))/2);
+	y1=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(bla)-Math.cos(bla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(bla)*Math.sin(Math.abs(aln-bln)),2))/2);
+	x2=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(cla)-Math.sin(ala),2)+Math.pow(Math.cos(cla)-Math.cos(ala),2))/2);
+	y2=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(cla)-Math.cos(cla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(cla)*Math.sin(Math.abs(aln-bln)),2))/2);
+	x3=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(dla)-Math.sin(ala),2)+Math.pow(Math.cos(dla)-Math.cos(ala),2))/2);
+	y3=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(dla)-Math.cos(dla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(dla)*Math.sin(Math.abs(aln-bln)),2))/2);
+	if (aln>bln){y1=-y1}; if (ala<bla){x1=-x1};
+	if (aln>cln){y2=-y2}; if (ala<cla){x2=-x2};
+	if (aln>dln){y3=-y3}; if (ala<dla){x3=-x3};
+	xa=L*Math.cos(Math.PI-mu);
+	xb=x1+L*Math.cos(Math.PI-mu);
+	ya=L*Math.sin(Math.PI-mu);
+	yb=y1+L*Math.sin(Math.PI-mu);
+	if (Math.sin(mu-m)>0){
+		if (daynum==0 && time==Math.floor(time)){lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu)}
+		return 0;
+	}else{
+		if (daynum==0 && time==Math.floor(time)){lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu)}}
+	if (!pointInPolygon(x2,y2,[0,xa,xb,x1],[0,ya,yb,y1])){return 0;};
+	if (!pointInPolygon(x3,y3,[0,xa,xb,x1],[0,ya,yb,y1])){return 0;};
+	//lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu);
+	gamma=-Math.PI/2+m-2*n+alpha;
 	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
 	B=0.15*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
 }else{
@@ -395,21 +447,40 @@ if (lambda<Math.PI/12){
 };
 return 0;
 }
+var pab1=[];
+function lineGraph(ala,aln,bla,bln,cla,cln,dla,dln,ho,Hg,mu){
+	pab1.push(new google.maps.Polyline({
+		path: [new google.maps.LatLng(ala/pi180, aln/pi180), 
+		new google.maps.LatLng(ala2/pi180, aln2/pi180),
+		new google.maps.LatLng(bla2/pi180, bln2/pi180),
+		new google.maps.LatLng(bla/pi180, bln/pi180)],
+		map: map,
+		strokeColor: "#FF8000",
+		strokeOpacity: 1.0,
+		strokeWeight: 2,
+		visible: true,
+	}));
+}
+
 function AutoRedraw(){
-    if ($("#autocalc").is(':checked') && visiblemark){
+	if ($("#autocalc").is(':checked') && visiblemark){
 	if (timeoutID!=-1){clearTimeout(timeoutID)};
 	DrawChart(3,5);
 	timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
-    };
+	};
 }
 function DrawChart(densityx,densityy){
+if (pab1.length!=0){
+for (k = 0; k < pab1.length; k++){pab1[k].setMap(null);};
+pab1.length = 0;pab1=[]}
+
 var EffectData=new Array(7);
 for(i=0;i<7;i++){
-     EffectData[i]=[[]];
+	 EffectData[i]=[[]];
 };
 var EffectDataEnd=new Array(7);
 for(i=0;i<7;i++){
-     EffectDataEnd[i]=[[]];
+	 EffectDataEnd[i]=[[]];
 };
 alat = markera.getPosition().lat() * pi180;
 alng = markera.getPosition().lng() * pi180;
@@ -419,8 +490,8 @@ clat = markerc.getPosition().lat() * pi180;
 clng = markerc.getPosition().lng() * pi180;
 dlat = markerd.getPosition().lat() * pi180;
 dlng = markerd.getPosition().lng() * pi180;
-var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math
-    .cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
+
+var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math.cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
 var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
 $("#grapharea").empty();
 if (l>1500){return 0}; 
@@ -435,10 +506,10 @@ var yScale = d3.scale.linear()
 	.range([h - padding, padding]);
 var graph = d3.select("#grapharea");
 var lineFunction = d3.svg.line()
-                   .x(function(d) {return xScale(d[0]);})
-                   .y(function(d) {return yScale(d[1]);})
-                   .interpolate("linear-closed");
-//h1 = $("#wallh").slider("value");
+				   .x(function(d) {return xScale(d[0]);})
+				   .y(function(d) {return yScale(d[1]);})
+				   .interpolate("linear-closed");
+h1 = $("#wallh").slider("value");
 //h2 = $("#planeh").slider("value");
 var lastnum=-1;
 var nownum=-1;
@@ -447,12 +518,13 @@ var closeda=[0,0,0,0,0,0];
 var nowtime=[[],[],[],[],[],[]];
 var nowend=[[],[],[],[],[],[]];
 var addcount=0;
+
 for (i=0;i<365;i+=densityy){
 	nowtime=[[],[],[],[],[],[]];
 	nowend=[[],[],[],[],[],[]];
 	lastnum=-1;
 	for (j=0;j<1440;j+=densityx){
-		nownum=Calc(i,j/60,alat,alng,blat,blng,clat,clng,dlat,dlng);
+		nownum=Calc(i,j/60,alat,alng,blat,blng,clat,clng,dlat,dlng,h1);
 		if (lastnum!=nownum){
 			if (lastnum!=-1){nowend[lastnum].push(j-0.5);};
 			if (nownum!=-1){nowtime[nownum].push(j-0.5);}
@@ -509,26 +581,42 @@ graph.append("circle")
 $(document).ready(function() {
 var i=0;var j=0;var k=0;
 initialize();
-    $("#wallh").slider({
-        orientation: "horizontal",
-        range: "min",
-        max: 120,
-        value: 20,
-        slide: function(event, ui) {$("#wallh-n").text( ui.value );},
-        change: function(event, ui) {$("#wallh-n").text( ui.value );}
-    });
-    $("#planeh").slider({
-        orientation: "horizontal",
-        range: "min",
-        max: 100,
-        value: 10,
-        slide: function(event, ui) {$("#planeh-n").text( ui.value );},
-        change: function(event, ui) {$("#planeh-n").text( ui.value );}
-    });
-    $("#radio").buttonset();
-    $("#btncalc").button();
+	$("#wallh").slider({
+		orientation: "horizontal",
+		range: "min",
+		max: 120,
+		value: 20,
+		slide: function(event, ui) {$("#wallh-n").text( ui.value );},
+		change: function(event, ui) {$("#wallh-n").text( ui.value );AutoRedraw();}
+	});
+	$("#planeh").slider({
+		orientation: "horizontal",
+		range: "min",
+		max: 100,
+		value: 10,
+		slide: function(event, ui) {$("#planeh-n").text( ui.value );},
+		change: function(event, ui) {$("#planeh-n").text( ui.value );}
+	});
+	$("#radio").buttonset();
+	$("#lbradio1").click(function(){
+		$("#btnturnw").css("border-bottom-color","#FF8000");})
+	$("#lbradio2").click(function(){
+		$("#btnturnw").css("border-bottom-color","#A5DF00");})
+	$("#btncalc").button();
 	$("#autocalc").button();
-    $("#btncalc").click(function(){
+	$("#btnturn").button();
+	$("#btnturn").click(function(){
+		if ($("[name='radio']:checked").val()=="wa"){
+		tlatlng=markerb.getPosition();
+		markerb.setPosition(markera.getPosition());
+		markera.setPosition(tlatlng);
+		}else{
+		tlatlng=markerd.getPosition();
+		markerd.setPosition(markerc.getPosition());
+		markerc.setPosition(tlatlng);
+		}
+		});
+	$("#btncalc").click(function(){
 		if (visiblemark){
 		DrawChart(1,1);
 		$("html, body").scrollTop($(document).height());
@@ -550,54 +638,54 @@ initialize();
 	svg.append("g").attr("id", "grapharea");
 	var lgsvg = d3.select("#chart-legend").append("svg").attr("width", $(document.body).width() * 0.2).attr("height", h-100);
 	lgsvg.selectAll("rect")
-	    .data(Palette)
-	    .enter()
-	    .append("rect")
-	    .attr("x", 2)
-	    .attr("y", function(d,i) {return i*25;})
-	    .attr("width", 30)
-	    .attr("height", 20)
-	    .attr("fill", function(d) {return d;});
+		.data(Palette)
+		.enter()
+		.append("rect")
+		.attr("x", 2)
+		.attr("y", function(d,i) {return i*25;})
+		.attr("width", 30)
+		.attr("height", 20)
+		.attr("fill", function(d) {return d;});
 	lgsvg.selectAll("text")
-	    .data(efname)
-	    .enter()
-	    .append("text")
-	    .attr("x", 40)
-	    .attr("y", function(d,i) {return i*25+16;})
-	    .style("font-size","16px")
-	    .text(function(d) {return d;});
+		.data(efname)
+		.enter()
+		.append("text")
+		.attr("x", 40)
+		.attr("y", function(d,i) {return i*25+16;})
+		.style("font-size","16px")
+		.text(function(d) {return d;});
 	lgsvg.append("rect")
-	    .attr("x", 2)
-	    .attr("y", 150)
-	    .attr("width", 30)
-	    .attr("height", 20)
+		.attr("x", 2)
+		.attr("y", 150)
+		.attr("width", 30)
+		.attr("height", 20)
 		.attr("fill","#F0F0F0");
 	lgsvg.append("text")
-	    .attr("x", 40)
-	    .attr("y", 166)
-	    .style("font-size","16px")
-	    .text("无日光");
+		.attr("x", 40)
+		.attr("y", 166)
+		.style("font-size","16px")
+		.text("无日光");
 	lgsvg.append("circle")
-	    .attr("cx", 17)
-	    .attr("cy", 185)
-	    .attr("r", 2)
-	    .attr("fill","#0B3861")
+		.attr("cx", 17)
+		.attr("cy", 185)
+		.attr("r", 2)
+		.attr("fill","#0B3861")
 	lgsvg.append("text")
-	    .attr("x", 40)
-	    .attr("y", 191)
-	    .style("font-size","16px")
-	    .text("当前时间");
+		.attr("x", 40)
+		.attr("y", 191)
+		.style("font-size","16px")
+		.text("当前时间");
 });
 </script>
 </head>
 <body>
   <!--[if lt IE 9]>
   <div style="border: 1px solid #FF4000; background: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
-    <div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
-    <div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
-        <p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。网页可能无法使用。</p>
-        <p style="font-size: 12px; margin-top: 6px; line-height: 12px; text-align: center;">请升级您的浏览器（IE9及以上或其他浏览器）来获得更好的浏览体验。</p>
-    </div>
+	<div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
+	<div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
+		<p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。网页可能无法使用。</p>
+		<p style="font-size: 12px; margin-top: 6px; line-height: 12px; text-align: center;">请升级您的浏览器（IE9及以上或其他浏览器）来获得更好的浏览体验。</p>
+	</div>
   </div>
   <![endif]-->
 <h1>玻璃幕墙光反射影响预测工具</h1>
@@ -615,11 +703,11 @@ initialize();
 </div>
 </form>
 <h2>计算设置</h2>
-<p><form id="radiogroup">
-  <span class="wigtitle">更改地图上墙面：</span>
-  <div class="jquibt" id="radio">
-    <input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1">玻璃幕墙</label>
-    <input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2">受照射墙面</label>
+<p>
+  <span class="wigtitle">更改地图上墙面：<button class="jquibt" id="btnturn" name="btnturn">旋转<span id="btnturnw">墙面</span></button></span>
+<form id="radiogroup"><div class="jquibt" id="radio">
+	<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1" id="lbradio1">玻璃幕墙</label>
+	<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">受照射墙面</label>
   </div>
 </form></p>
 <p><span class="wigtitle">玻璃幕墙宽：</span><span id="distance" class="num">0</span>米</p>
@@ -629,8 +717,8 @@ initialize();
 <p><span class="wigtitle">受照射面高度：</span><span id="planeh-n" class="num">10</span>米<div id="planeh" class="slider jqui"></div>
 </p>
 <p><div class="jquibt" id="button">
-    <button id="btncalc" name="button" title="绘图更精确">计算</button>
-    <input type="checkbox" id="autocalc" name="autocalc" checked="checked"><label for="autocalc">自动计算</label>
+	<button id="btncalc" name="button" title="绘图更精确">计算</button>
+	<input type="checkbox" id="autocalc" name="autocalc" checked="checked"><label for="autocalc">自动计算</label>
 </div>
 </p>
 <div class="ui-widget" id="errdiv">

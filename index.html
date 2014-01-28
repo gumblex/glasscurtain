@@ -62,11 +62,12 @@ p {
 }
 .jquibt{
 	font-size: .8em;
-	user-select: none; 
-	-o-user-select: none; 
-	-moz-user-select: none; 
-	-khtml-user-select: none; 
-	-webkit-user-select: none; 
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 .ui-spinner, .ui-slider{font-size: .875em;margin: 0 .25em 0;}
 .ui-spinner-input{width:1.75em; }
@@ -139,7 +140,7 @@ p {
 	content:"";
 	position:absolute;
 	left:.5em;
-	top:.5em;
+	top:.6em;
 	width:.5em;
 	height:1em;
 }
@@ -178,11 +179,12 @@ a, a:visited {
 }
 .axis text{
 	font-size: 0.75em;
-	user-select: none; 
-	-o-user-select: none; 
-	-moz-user-select: none; 
-	-khtml-user-select: none; 
-	-webkit-user-select: none; 
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 .grid line{
 	fill: none;
@@ -210,7 +212,7 @@ var geocoder;
 var visiblemark=false;
 
 //var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];
-var Palette=["#4CC4FF","#AEFF5C","#FFD34D","#ff7f0e","#e377c2","#d62728"];
+var Palette=["#06ADFF","#AEFF5C","#FFD34D","#ff7f0e","#e377c2","#d62728"];
 var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
 var dearth = 12745594;
 var pi180 = 0.0174532925199;
@@ -281,7 +283,7 @@ function initialize() {
 		visible: false,
 		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
 			offset: '5px', repeat: '10px'},
-			{icon: {path: 'M -1.5,-2.5 1.5,-2.5 1.5,2.5 -1.5,2.5 Z', fillColor: "#FF0080", fillOpacity: 0.8, strokeWeight: 0},
+			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
 			offset: '50%'}]
 	});
 	pab1=new google.maps.Polygon({
@@ -347,7 +349,7 @@ function initialize() {
 	google.maps.event.addListener(markerc, 'position_changed', function () {
 		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
 		$("#distanceb").html(distb());AutoDraw();
-   });
+	});
 	google.maps.event.addListener(markerd, 'position_changed', function () {
 		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
 		$("#distanceb").html(distb());AutoDraw();
@@ -910,11 +912,11 @@ var i=0;var j=0;var k=0;
 		min: 0,
 		value: 50,
 		slide: function(event, ui) {polyb.setOptions({icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2}, offset: '5px', repeat: '10px'},
-			{icon: {path: 'M -1.5,-2.5 1.5,-2.5 1.5,2.5 -1.5,2.5 Z', fillColor: "#FF0080", fillOpacity: 0.8, strokeWeight: 0},
+			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
 			offset: ui.value + '%'}]});DrawLine(nowcoord,mouseDownOnElement);},
 		change: function(event, ui) {
 			polyb.setOptions({icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2}, offset: '5px', repeat: '10px'},
-			{icon: {path: 'M -1.5,-2.5 1.5,-2.5 1.5,2.5 -1.5,2.5 Z', fillColor: "#FF0080", fillOpacity: 0.8, strokeWeight: 0},
+			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
 			offset: ui.value + '%'}]})
 			AutoRedraw();}
 	});
@@ -923,12 +925,12 @@ var i=0;var j=0;var k=0;
 		$("#radio1").attr("checked", "checked");
 		$("#radio").buttonset('refresh');
 		ChangeMarker();
-		$("#btnturnw").removeClass().addClass("clr1");})
+		$("#btnturnw").removeClass().addClass("clr1");});
 	$("#lbradio2").click(function(){
 		$("#radio2").attr("checked", "checked");
 		$("#radio").buttonset('refresh');
 		ChangeMarker();
-		$("#btnturnw").removeClass().addClass("clr2");})
+		$("#btnturnw").removeClass().addClass("clr2");});
 	$("#btnturn").button();
 	$("#btnturn").click(function(){
 		if ($("#radio1").is(':checked')){
@@ -972,7 +974,9 @@ var i=0;var j=0;var k=0;
 	.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
 	.attr("class","tpointer")
 	.attr("transform", "translate(-10,-10)");
-initialize();
+	$(".axis text").mousedown(function(){return false});
+	$(".axis text").mousemove(function(){return false});
+	initialize();
 });
 </script>
 </head>

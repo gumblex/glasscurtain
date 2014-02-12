@@ -17,7 +17,7 @@ body {
 	background-color: #FBF8EF;
 	font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
 }
-#header{
+header{
 	margin-top: 0;
 	margin-bottom: 1em;
 }
@@ -160,7 +160,7 @@ a, a:visited {
 	text-decoration: none;
 	color: #03E;
 }
-#footer {
+footer {
 	font-size: .875em;
 	margin: 2em 1em;
 	padding-top: .5em;
@@ -211,8 +211,8 @@ var poly,polyb;
 var geocoder;
 var visiblemark=false;
 
-//var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];
-var Palette=["#06ADFF","#AEFF5C","#FFD34D","#ff7f0e","#e377c2","#d62728"];
+//var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];//#06ADFF
+var Palette=["#9edae5","#AEFF5C","#FFD34D","#ff7f0e","#e377c2","#d62728"];
 var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
 var dearth = 12745594;
 var pi180 = 0.0174532925199;
@@ -226,6 +226,7 @@ var idleInterval = -1;
 var xScale, yScale, xrevScale, yrevScale;
 var pab1;
 var nowcoord=[0,0];
+var mouseDownOnElement=false;
 function initialize() {
 	var mapOptions = {
 		zoom: 12,
@@ -442,14 +443,13 @@ function pointInPolygon(x,y,polyX,polyY) {
 }
 
 function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln,Hg,Hp,lw,draw) {
-//function Calc(daynum,time,h1,h2,ala,aln,bla,bln,cla,cln,dla,dln) {
 //daynum -> in one year
 //time -> 24h, DEG
 //ala,aln,bla,bln,cla,cln,dla,dln -> RAD!!!!!
 var avgla=(ala+bla+cla+dla)/4;
 var avgln=(aln+bln+cln+dln)/4;
 var localtime=time+(avgln/pi180-120)/15;
-var a=Math.PI*2*(daynum+localtime/24-1)/365;
+var a=Math.PI*2*(daynum+localtime/24)/365;
 var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
 var ho=Math.asin(Math.cos(Math.PI*(localtime-12)*15/180)*Math.cos(avgla)*Math.cos(phi)+Math.sin(avgla)*Math.sin(phi));
 if (ho>0){
@@ -470,7 +470,7 @@ if (ho>0){
 	aln2=aln+(L*Math.sin(Math.PI-mu)*2/dearth);
 	bla2=bla-(L*Math.cos(Math.PI-mu)*2/dearth);
 	bln2=bln+(L*Math.sin(Math.PI-mu)*2/dearth);
-	if (draw){lineGraph(ala,aln,ala2,aln2,bla2,bln2,bla,bln,ho,Hg,mu);}
+	if (draw){lineGraph(ala,aln,ala2,aln2,bla2,bln2,bla,bln);}
 	if (Math.sin(mu-m)>0){return 0;};
 	x1=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(bla)-Math.sin(ala),2)+Math.pow(Math.cos(bla)-Math.cos(ala),2))/2);
 	y1=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(bla)-Math.cos(bla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(bla)*Math.sin(Math.abs(aln-bln)),2))/2);
@@ -491,30 +491,11 @@ if (ho>0){
 	d=Math.sqrt(Math.pow(x4-x5,2)+Math.pow(y4-y5,2));
 	hmax=Math.tan(ho)*(L-d);
 	if (hmax<Hp){return 0};
-	/*
-	s1=(y3+(y2-y3)*(x3)/(x3-x2))/((y2-y3)/(x3-x2)+Math.tan(Math.PI-mu));
-	if (!((s1>=x2 && s1<=x3) || (s1>=x3 && s1<=x2))){return 0};
-	if (s1<0 || s1>L*Math.cos(Math.PI-mu)){return 0};
-	s2=(y3-y1+(y2-y3)*(x3)/(x3-x2)+Math.tan(Math.PI-mu))/((y2-y3)/(x3-x2)+Math.tan(Math.PI-mu));
-	if (!((s2>=x2 && s2<=x3) || (s2>=x3 && s2<=x2))){return 0};
-	if (s2<x1 || s2>x1+L*Math.cos(Math.PI-mu)){return 0};
-	s3=(Math.sin(Math.PI-mu)-Math.cos(Math.PI-mu)*L*y1/x1-y3+(y3-y2)/(x3-x2)*x3)/((y3-y2)/(x3-x2)-y1/x1);
-	if (!((s3>=x2 && s3<=x3) || (s3>=x3 && s3<=x2))){return 0};
-	if (s3<Math.cos(Math.PI-mu)*L || s3>x1+L*Math.cos(Math.PI-mu)){return 0};
-	*/
 	xa=L*Math.cos(Math.PI-mu);
 	xb=x1+L*Math.cos(Math.PI-mu);
 	ya=L*Math.sin(Math.PI-mu);
 	yb=y1+L*Math.sin(Math.PI-mu);
-	/*inpoint=0
-	if (pointInPolygon(x2,y2,[0,xa,xb,x1],[0,ya,yb,y1])){inpoint++};
-	if (pointInPolygon(x2*.25+x3*.75,y2*.25+y3*.75,[0,xa,xb,x1],[0,ya,yb,y1])){inpoint++};
-	if (pointInPolygon(x2*.5+x3*.5,y2*.5+y3*.5,[0,xa,xb,x1],[0,ya,yb,y1])){inpoint++};
-	if (pointInPolygon(x2*.75+x3*.25,y2*.75+y3*.25,[0,xa,xb,x1],[0,ya,yb,y1])){inpoint++};
-	if (pointInPolygon(x3,y3,[0,xa,xb,x1],[0,ya,yb,y1])){inpoint++};
-	if (inpoint<2){return 0};*/
 	if (!pointInPolygon((x3*lw+x2*(100-lw))/100,(y3*lw+y2*(100-lw))/100,[0,xa,xb,x1],[0,ya,yb,y1])){return 0};
-	
 	gamma=-Math.PI/2+m-2*n+alpha;
 	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
 	B=rho*137000*Math.exp(-0.223/Math.sin(ho))/Math.PI;
@@ -536,7 +517,7 @@ if (lambda<Math.PI/12){
 };
 return 0;
 }
-function lineGraph(ala,aln,ala2,aln2,bla2,bln2,bla,bln,ho,Hg,mu){
+function lineGraph(ala,aln,ala2,aln2,bla2,bln2,bla,bln){
 	if (visiblemark){
 	pab1.setOptions({
 		path: [new google.maps.LatLng(ala/pi180, aln/pi180), 
@@ -611,7 +592,7 @@ function DrawChart(densityx,densityy){
 	var graph = d3.select("#grapharea");
 	var lineFunction = d3.svg.line()
 					   .x(function(d) {return xScale(d[0]);})
-					   .y(function(d) {return yScale(d[1]);t})
+					   .y(function(d) {return yScale(d[1]);})
 					   .interpolate("linear-closed");
 	h1 = $("#wallh").spinner("value")*3;
 	h2 = $("#planeh").spinner("value")*3;
@@ -644,7 +625,7 @@ function DrawChart(densityx,densityy){
 			if (j!=1439 && j+densityx>1439){j=1439}else{j+=densityx}
 		};
 		if (opened){nowend[lastnum].push(1439);}
-		for (j=0;j<6;j++){  
+		for (j=0;j<6;j++){
 			if (nowtime[j].length!=lastcount[j]){
 				addcount=lastcount[j]+nowtime[j].length;
 				if (i>0){closeda[j]+=lastcount[j];}
@@ -712,8 +693,6 @@ function DrawLine(coord,mouse){
 		}else{pab1.setOptions({visible: false})}
 	}
 }
-
-mouseDownOnElement=false;
 $(document).ready(function() {
 if ($(document.body).width()>900){
 	w = $(document.body).width() * 0.39;
@@ -917,7 +896,7 @@ var i=0;var j=0;var k=0;
 		change: function(event, ui) {
 			polyb.setOptions({icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2}, offset: '5px', repeat: '10px'},
 			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
-			offset: ui.value + '%'}]})
+			offset: ui.value + '%'}]});
 			AutoRedraw();}
 	});
 	$("#radio").buttonset();
@@ -981,36 +960,36 @@ var i=0;var j=0;var k=0;
 </script>
 </head>
 <body>
-  <!--[if lt IE 10]>
-  <div style="border: 1px solid #FF4000; background-color: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
-	<div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
-	<div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
-		<p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。此网页可能无法使用。</p>
-		<p style="font-size: 12px; margin-top: 6px; line-height: 12px; text-align: center;">请升级您的浏览器 (IE10及以上，或其他核心的浏览器) 来获得更好的浏览体验。</p>
-	</div>
-  </div>
-  <![endif]-->
-<div id="header">
-<h1>玻璃幕墙光反射影响预测工具</h1>
+<!--[if lt IE 10]>
+<div style="border: 1px solid #FF4000; background-color: #FFDA66; text-align: center; clear: both; height: 60px; position: relative;">
+<div style="position: absolute; right: 3px; top: 3px; font-family: Arial; font-weight: bold;"><a href="#" onclick='javascript:this.parentNode.parentNode.style.display="none"; return false;'>×</a></div>
+<div style='margin: 0 auto; text-align: left; padding: 0; overflow: hidden; color: black; text-align:center'>
+	<p style="font-size: 14px; font-weight: bold; margin-top: 12px; text-align: center;">您正在使用一款过时的浏览器。此网页可能无法使用。</p>
+	<p style="font-size: 12px; margin-top: 6px; line-height: 12px; text-align: center;">请升级您的浏览器 (IE10及以上，或其他核心的最新版本浏览器) 来获得更好的浏览体验。</p>
 </div>
+</div>
+<![endif]-->
+<header>
+<h1>玻璃幕墙光反射影响预测工具</h1>
+</header>
 <div id="app">
 	<div id="simpleSearch">
 		<form id="searchform" onsubmit="codeAddress();return false;">
 		<input name="search" placeholder="查找地址" title="查找地址" id="address">
 		<button type="submit" name="button" title="查找地址" id="searchButton" onclick="codeAddress()">
-		<img id="imgsearch" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAAAAAC4QtCeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAJ0Uk5TAP9bkSK1AAAAaklEQVQI12P4///u3NrauXf/AwHD//05YLAfxLmbl7/n48c9+Xn3gZxJYDGg/BQgpyznC4jzJacMmVOMrgxowMFPnw5CDIAZnbMLxAFaWl09txrEY/gPAe87gTwY5//PmTmr4Jz/f699BgAmIHmp1XxJagAAAABJRU5ErkJggg==" alt="查找地址" width="12" height="13"></button>
+		<img id="imgsearch" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAANCAQAAAA3IEfJAAAAp0lEQVQY023PMUoDcRTE4e/9k1IwB0hEFhtLi+3TByHBO3geLyKESCoJpN/Cwj5ukQOE9OalWFjRONO93/CYiURUpm7R2uYOiBRTT370mlsYRmXh25sGtUeLaLOlmCmWucljHnNjqZhBMUbTP2pw04FLDTqwR90fa3zB0NqdeZx84MHcyfr/uqzynegHVtipXHco8lc4Rp5NsPrTKg9efGIkL6y4d3UGrfo56kDR4lwAAAAASUVORK5CYII=" alt="查找地址" width="12" height="13"></button>
 		</form>
 		<div class="ui-widget" id="errdiv">
 			<div class="ui-state-highlight ui-corner-all" style="padding: 0 .7em;" id="error"><p></p></div>
 		</div>
 	</div>
-	<div id="graph">
+	<section id="graph">
 		<div id="chart-svg"></div>
 		<div id="chart-legend">
 			<h2>图例</h2>
 		</div>
-	</div>
-	<div id="tools">
+	</section>
+	<section id="tools">
 		<form id="radiogroup" onsubmit="return false;">
 		 <span class="wigtitle">更改地图上墙面：</span><span class="jquibt"><button id="btnturn" name="btnturn"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
 		<div class="jquibt" id="radio">
@@ -1024,13 +1003,14 @@ var i=0;var j=0;var k=0;
 		<span class="wigtitle">受照射面楼层：</span>
 		<input id="planeh" class="jquisp" value=6><span class="unit">层</span>
 		<span class="wigtitle">窗：</span><div id="window" class="slider" title="调整窗在受照墙面的位置"></div></div>
-	</div>
+	</section>
 	<div id="map-canvas"></div>
 </div>
-<div id="footer">
+<footer>
 <div class="info">
 <p><span class="wigtitle">使用提示：</span>在地图上通过<strong>左右</strong>键点击或移动标识来确定目标墙体的位置。 图表<span style="background-color:#F0F0F0;padding:0 .25em;font-weight: bold;">空白</span>：标记位置不正确或无影响。 “<span class="wigtitle">窗</span>”拖动条调整窗在受照墙面的位置。</p>
 <p><span class="wigtitle">说明：</span>程序会先使用粗略计算，再延时使用精确计算以提高运行速度。默认使用UTC+8时区(北京时间)显示绘图。层高为3米。程序未考虑气候、地形、建筑实际结构、遮挡物、近似的照度计算等因素，计算结果为估计的最大值。本软件的计算结果仅作参考，存在一定误差，不可用于精确测量用途。</p></div>
-</div>
+<div class="finfo">制作：王鼎元、林晨阳 2014年1月</div>
+</footer>
 </body>
 </html>

@@ -3,7 +3,8 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta http-equiv="Content-Language" content="zh-cn">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- , maximum-scale=1.0 -->
 <title>玻璃幕墙光反射影响预测工具</title>
 <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
 <script src="jquery-1.10.2.min.js"></script>
@@ -530,13 +531,13 @@ function timerIncrement() {
 	midleTime++;
 	if (midleTime == 5) { // 500ms
 		DrawLine(nowcoord,mouseDownOnElement);
-		DrawChart(3,5);
-	}else if (midleTime > 25){
+		DrawChart(3,3);
+	}else if (midleTime > 50){
 		clearInterval(idleInterval);
 		idleInterval=-1;
 		midleTime=0;
 		DrawLine(nowcoord,mouseDownOnElement);
-		DrawChart(1,1);
+		DrawChart(2,1);
 	}
 }
 function AutoDraw(){
@@ -669,9 +670,6 @@ function DrawChart(densityx,densityy){
 		//$("#tp"+i).text(Math.round(10000*sumup[i]/sumall)/100 + "%");
 		$("#tp"+i).text(Math.round(sumup[i]/60) + "h");
 	};
-	//var nowDate=new Date();
-
-	//var startD = new Date(nowDate.getFullYear(), 0, 0);
 }
 function DrawLine(coord,mouse){
 	if (coord[0]>padding*1.5 && coord[0]<w-padding*1.5
@@ -947,11 +945,14 @@ var i=0;var j=0;var k=0;
 		.attr("transform", "translate(0," + (h - padding) + ")").call(xAxis);
 	svg.append("g").attr("class", "axis ay")
 		.attr("transform", "translate(" + padding*1.5 + ",0)").call(yAxis);
+	var nowDate=new Date();
+	var startD = new Date(nowDate.getFullYear(), 0, 0);
 	svg.append("path")
 	.attr("id","tpoint")
 	.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
 	.attr("class","tpointer")
-	.attr("transform", "translate(-10,-10)");
+	.attr("transform", "translate("+xScale(nowDate.getHours()*60+nowDate.getMinutes()).toString()+","+yScale(Math.floor((nowDate-startD)/86400000)).toString()+")");
+	nowcoord=[xScale(nowDate.getHours()*60+nowDate.getMinutes()),yScale(Math.floor((nowDate-startD)/86400000))];
 	$(".axis text").mousedown(function(){return false});
 	$(".axis text").mousemove(function(){return false});
 	initialize();

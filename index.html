@@ -186,6 +186,15 @@ footer {
 	-ms-user-select: none;
 	user-select: none;
 }
+#tptext{
+	font-size: 0.75em;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
 .grid line{
 	fill: none;
 	shape-rendering: crispEdges;
@@ -446,7 +455,7 @@ function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln,Hg,Hp,lw,draw) {
 //daynum -> in one year
 //time -> 24h, DEG
 //ala,aln,bla,bln,cla,cln,dla,dln -> RAD!!!!!
-$("#testout").html(ala+","+aln+","+bla+","+bln+","+cla+","+cln+","+dla+","+dln+","+Hg+","+Hp+","+lw)
+//$("#testout").html(ala+","+aln+","+bla+","+bln+","+cla+","+cln+","+dla+","+dln+","+Hg+","+Hp+","+lw)
 var avgla=(ala+bla+cla+dla)/4;
 var avgln=(aln+bln+cln+dln)/4;
 var localtime=time+(avgln/pi180-120)/15;
@@ -685,7 +694,14 @@ function DrawLine(coord,mouse){
 		dla = markerd.getPosition().lat() * pi180;
 		dln = markerd.getPosition().lng() * pi180;
 		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
-		val=Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,ala,aln,bla,bln,cla,cln,dla,dln,$("#wallh").spinner("value")*3,$("#planeh").spinner("value")*3,$("#window").slider("value"),true)
+		$("#tptext").attr("x", coord[0]+10);
+		$("#tptext").attr("y", coord[1]+10);
+		var nowDate = new Date();
+		var startD = new Date(nowDate.getFullYear(), 0);
+		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))));
+		nowDate.setMinutes(xrevScale(coord[0]));
+		$("#tptext").text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
+		val=Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,ala,aln,bla,bln,cla,cln,dla,dln,$("#wallh").spinner("value")*3,$("#planeh").spinner("value")*3,$("#window").slider("value"),true);
 		if (val>-1){
 		pab1.setOptions({fillColor: Palette[val],visible: true})
 		}else{pab1.setOptions({visible: false})}
@@ -946,16 +962,24 @@ var i=0;var j=0;var k=0;
 		.attr("transform", "translate(0," + (h - padding) + ")").call(xAxis);
 	svg.append("g").attr("class", "axis ay")
 		.attr("transform", "translate(" + padding*1.5 + ",0)").call(yAxis);
-	var nowDate=new Date();
-	var startD = new Date(nowDate.getFullYear(), 0, 0);
+	var nowDate = new Date();
+	var startD = new Date(nowDate.getFullYear(), 0);
 	svg.append("path")
-	.attr("id","tpoint")
-	.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
-	.attr("class","tpointer")
-	.attr("transform", "translate("+xScale(nowDate.getHours()*60+nowDate.getMinutes()).toString()+","+yScale(Math.floor((nowDate-startD)/86400000)).toString()+")");
+		.attr("id","tpoint")
+		.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
+		.attr("class","tpointer")
+		.attr("transform", "translate("+xScale(nowDate.getHours()*60+nowDate.getMinutes()).toString()+","+yScale(Math.floor((nowDate-startD)/86400000)).toString()+")");
+	svg.append("text")
+		.attr("id","tptext")
+		.attr("x", xScale(nowDate.getHours()*60+nowDate.getMinutes())+10)
+		.attr("y", yScale(Math.floor((nowDate-startD)/86400000))+10)
+		.style("fill","#111111")
+		.text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
 	nowcoord=[xScale(nowDate.getHours()*60+nowDate.getMinutes()),yScale(Math.floor((nowDate-startD)/86400000))];
 	$(".axis text").mousedown(function(){return false});
 	$(".axis text").mousemove(function(){return false});
+	$("#tptext").mousedown(function(){return false});
+	$("#tptext").mousemove(function(){return false});
 	initialize();
 });
 </script>
@@ -1008,7 +1032,6 @@ var i=0;var j=0;var k=0;
 	<div id="map-canvas"></div>
 </div>
 <footer>
-<pre id="testout"></pre>
 <div class="info">
 <p><span class="wigtitle">使用提示：</span>在地图上通过<strong>左右</strong>键点击或移动标识来确定目标墙体的位置。 图表<span style="background-color:#F0F0F0;padding:0 .25em;font-weight: bold;">空白</span>：标记位置不正确或无影响。 “<span class="wigtitle">窗</span>”拖动条调整窗在受照墙面的位置。</p>
 <p><span class="wigtitle">说明：</span>程序会先使用粗略计算，再延时使用精确计算以提高运行速度。默认使用UTC+8时区(北京时间)显示绘图。层高为3米。程序未考虑气候、地形、建筑实际结构、遮挡物、近似的照度计算等因素，计算结果为估计的最大值。本软件的计算结果仅作参考，存在一定误差，不可用于精确测量用途。</p></div>

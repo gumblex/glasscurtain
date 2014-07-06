@@ -237,6 +237,7 @@ var pab1;
 var nowcoord=[0,0];
 var mouseDownOnElement=false;
 function initialize() {
+	if (typeof google == "undefined") {return;}
 	var mapOptions = {
 		zoom: 12,
 		center: new google.maps.LatLng(31.231, 121.474),
@@ -694,7 +695,7 @@ function DrawLine(coord,mouse){
 		dla = markerd.getPosition().lat() * pi180;
 		dln = markerd.getPosition().lng() * pi180;
 		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
-		$("#tptext").attr("x", coord[0]+10);
+		$("#tptext").attr("x", coord[0]+7);
 		$("#tptext").attr("y", coord[1]+10);
 		var nowDate = new Date();
 		var startD = new Date(nowDate.getFullYear(), 0);
@@ -971,7 +972,7 @@ var i=0;var j=0;var k=0;
 		.attr("transform", "translate("+xScale(nowDate.getHours()*60+nowDate.getMinutes()).toString()+","+yScale(Math.floor((nowDate-startD)/86400000)).toString()+")");
 	svg.append("text")
 		.attr("id","tptext")
-		.attr("x", xScale(nowDate.getHours()*60+nowDate.getMinutes())+10)
+		.attr("x", xScale(nowDate.getHours()*60+nowDate.getMinutes())+7)
 		.attr("y", yScale(Math.floor((nowDate-startD)/86400000))+10)
 		.style("fill","#111111")
 		.text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
@@ -1029,7 +1030,7 @@ var i=0;var j=0;var k=0;
 		<input id="planeh" class="jquisp" value=6><span class="unit">层</span>
 		<span class="wigtitle">窗：</span><div id="window" class="slider" title="调整窗在受照墙面的位置"></div></div>
 	</section>
-	<div id="map-canvas"></div>
+	<div id="map-canvas"><p class="ui-widget ui-state-error ui-corner-all" style="text-align: center; font-weight: bold; padding: .3em">错误：地图未载入，可能由于网络连接故障或浏览器版本过低。所有功能将无法使用。</p></div>
 </div>
 <footer>
 <div class="info">

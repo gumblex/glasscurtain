@@ -90,7 +90,7 @@ p {
 	height: 1.75em;
 	margin: 1em 3em 1em 1em;
 	border: solid 1px #ddd;
-	border-radius: 4px;
+	border-radius: 3px;
 	color: black;
 	background-color: #f9f9f9;
 }
@@ -133,14 +133,13 @@ p {
 #radiogroup{margin-bottom:.5em;}
 #radio {
 	margin-top: .4em;
-	margin-left: 1em;
 	display: inline-block;
 }
 #lbradio1 span:before,#lbradio2 span:before,#btnturnw:before{
 	content:"";
 	position:absolute;
 	left:.5em;
-	top:.6em;
+	top:.5em;
 	width:.5em;
 	height:1em;
 }
@@ -152,6 +151,9 @@ p {
 }
 label.forrad span, #btnturn span{
 	text-indent: .5em;
+}
+#btnturn{
+	margin-right: 1em;
 }
 #button{
 	margin: 2em 1em;
@@ -212,11 +214,17 @@ footer {
 </style>
 <script>
 var map;
+var markeral = [];
+var markerbl = [];
+var mkindex = 0;
 var markera;
 var markerb;
 var markerc;
 var markerd;
+var mkdel;
+var polyl = [];
 var poly,polyb;
+var gwallh = [20];
 var geocoder;
 var visiblemark=false;
 
@@ -232,12 +240,13 @@ var lineHeight = 30;
 var rho = 0.15;
 var midleTime = 0;
 var idleInterval = -1;
+var mkdelTimeout = -1;
 var xScale, yScale, xrevScale, yrevScale;
 var pab1;
 var nowcoord=[0,0];
 var mouseDownOnElement=false;
 function initialize() {
-	if (typeof google === "undefined") {return;}
+	if (typeof google === "undefined") {return};
 	var mapOptions = {
 		zoom: 12,
 		center: new google.maps.LatLng(31.231, 121.474),
@@ -247,20 +256,24 @@ function initialize() {
 	geocoder = new google.maps.Geocoder();
 	google.maps.visualRefresh = true;
 	map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
-	markera = new google.maps.Marker({
+	markeral.push(new google.maps.Marker({
 		position: map.getCenter(),
 		map: map,
 		title: 'A',
 		visible: false,
 		draggable: true
-	});
-	markerb = new google.maps.Marker({
+	}));
+	markera = markeral[0];
+	markera.set('index',0);
+	markerbl.push(new google.maps.Marker({
 		position: map.getCenter(),
 		map: map,
 		title: 'B',
 		visible: false,
 		draggable: true
-	});
+	}));
+	markerb = markerbl[0];
+	markerb.set('index',0);
 	markerc = new google.maps.Marker({
 		position: map.getCenter(),
 		map: map,
@@ -275,7 +288,15 @@ function initialize() {
 		visible: false,
 		draggable: true
 	});
-	poly = new google.maps.Polyline({
+	mkdel = new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: '删除墙面',
+		visible: false,
+		draggable: false,
+		icon: {path: "m 20,10 -8,8 m 0,-8 8,8 m 6,-4 c 0,5.52285 -4.47716,10 -10,10 -5.52284,0 -10,-4.47715 -10,-10 0,-5.52285 4.47716,-10 10,-10 5.52284,0 10,4.47715 10,10 z", strokeOpacity: 1, strokeWeight: 3, strokeColor: "#FF2A2A"}
+	});
+	polyl.push(new google.maps.Polyline({
 		path: [markera.getPosition(), markerb.getPosition()],
 		map: map,
 		strokeColor: "#FF8000",
@@ -284,7 +305,9 @@ function initialize() {
 		visible: false,
 		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
 			offset: '5px', repeat: '10px'}]
-	});
+	}));
+	poly = polyl[0];
+	poly.set('index',0);
 	polyb = new google.maps.Polyline({
 		path: [markera.getPosition(), markerb.getPosition()],
 		map: map,
@@ -321,7 +344,6 @@ function initialize() {
 		} else {
 			markera.setPosition(event.latLng);
 			poly.setPath([markera.getPosition(), markerb.getPosition()]);
-			
 		}
 	}else{
 		if (!markerc.getVisible()) {
@@ -365,6 +387,26 @@ function initialize() {
 		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
 		$("#distanceb").html(distb());AutoDraw();
 	});
+	google.maps.event.addListener(poly, 'click', function () {
+		if ($("#radio1").is(':checked')){ChangeWall(0);}
+	});
+	google.maps.event.addListener(mkdel, 'click', function () {
+		markera.setMap(null);
+		markerb.setMap(null);
+		poly.setMap(null);
+		markeral.splice(mkindex,1);
+		markerbl.splice(mkindex,1);
+		polyl.splice(mkindex,1);
+		gwallh.splice(mkindex,1);
+		mkindex = 0;
+		markera = markeral[mkindex];
+		markerb = markerbl[mkindex];
+		poly = polyl[mkindex];
+		markera.setVisible(true);
+		markerb.setVisible(true);
+		mkdel.setVisible(false);
+		$("#wallh").spinner("value",gwallh[mkindex]);
+	});
 	$("#radiogroup").change(function(){ChangeMarker();});
 }
 function ChangeMarker(){
@@ -384,6 +426,75 @@ function ChangeMarker(){
 		}
 	}
 }
+function ChangeWall(index) {
+	markera.setVisible(false);
+	markerb.setVisible(false);
+	mkindex = index;
+	markera = markeral[index];
+	markerb = markerbl[index];
+	poly = polyl[index];
+	markera.setVisible(true);
+	markerb.setVisible(true);
+	$("#wallh").spinner("value",gwallh[index]);
+	TriggerDel(markera.getPosition());
+}
+function AddWall(latlng) {
+	markera.setVisible(false);
+	markerb.setVisible(false);
+	markeral.push(new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'A',
+		visible: false,
+		draggable: true
+	}));
+	markera = markeral[markeral.length-1];
+	markera.set('index',markeral.length-1);
+	markerbl.push(new google.maps.Marker({
+		position: map.getCenter(),
+		map: map,
+		title: 'B',
+		visible: false,
+		draggable: true
+	}));
+	markerb = markerbl[markeral.length-1];
+	markerb.set('index',markeral.length-1);
+	polyl.push(new google.maps.Polyline({
+		path: [markera.getPosition(), markerb.getPosition()],
+		map: map,
+		strokeColor: "#FF8000",
+		strokeOpacity: 1.0,
+		strokeWeight: 3,
+		visible: false,
+		icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2},
+			offset: '5px', repeat: '10px'}]
+	}));
+	poly = polyl[markeral.length-1];
+	poly.set('index',markeral.length-1);
+	gwallh.push(20);
+	$("#wallh").spinner("value",20);
+	mkindex = markeral.length-1;
+	google.maps.event.addListener(markera, 'position_changed', function () {
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		$("#distance").html(dist());AutoDraw();
+	});
+	google.maps.event.addListener(markerb, 'position_changed', function () {
+		poly.setPath([markera.getPosition(), markerb.getPosition()]);
+		$("#distance").html(dist());AutoDraw();
+	});
+	google.maps.event.addListener(poly, 'click', function () {
+		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
+	});
+	//TriggerDel(latlng);
+}
+function TriggerDel(latlng) {
+	if (mkindex !== 0){
+		mkdel.setPosition(latlng);
+		mkdel.setVisible(true);
+		if (mkdelTimeout === -1){mkdelTimeout = setTimeout(HideDel, 5000);}
+	} else {mkdel.setVisible(false)}
+}
+function HideDel(){mkdel.setVisible(false);mkdelTimeout=-1;}
 function codeAddress() {
 	var saddress = document.getElementById("address").value;
 	if (saddress!=="") {
@@ -395,7 +506,7 @@ function codeAddress() {
 		markerb.setPosition(map.getCenter());
 		markerc.setPosition(map.getCenter());
 		markerd.setPosition(map.getCenter());
-		$("#errdiv p").text(function (){return "找到："+ results[0].formatted_address;})
+		$("#errdiv p").text(function (){return "找到："+ results[0].formatted_address;});
 		$("#error").show();
 		$("#error").delay(2000);
 		$("#error").fadeOut(500);
@@ -472,8 +583,8 @@ function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln,Hg,Hp,lw,draw) {
 //time -> 24h, DEG
 //ala,aln,bla,bln,cla,cln,dla,dln -> RAD!!!!!
 //$("#testout").html(ala+","+aln+","+bla+","+bln+","+cla+","+cln+","+dla+","+dln+","+Hg+","+Hp+","+lw)
-var avgla=(ala+bla+cla+dla)/4;
-var avgln=(aln+bln+cln+dln)/4;
+var avgla=(ala+bla)/2;
+var avgln=(aln+bln)/2;
 var localtime=time+(avgln/pi180-120)/15;
 var a=Math.PI*2*(daynum+localtime/24)/365;
 var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
@@ -641,8 +752,8 @@ function DrawChart(densityx,densityy){
 	clng = markerc.getPosition().lng() * pi180;
 	dlat = markerd.getPosition().lat() * pi180;
 	dlng = markerd.getPosition().lng() * pi180;
-	var avgla=(alat+blat+clat+dlat)/4;
-	var avgln=(alng+blng+clng+dlng)/4;
+	var avgla=(alat+blat)/2;
+	var avgln=(alng+blng)/2;
 
 	var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math.cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
 	var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
@@ -725,7 +836,7 @@ function DrawChart(densityx,densityy){
 		};
 		if (i!==364 && i+densityy>364){i=364}else{i+=densityy}
 	};
-	console.log('Calc completed: ' + ((new Date().getTime()) - startTime)); /////////////////////
+	//console.log('Calc completed: ' + ((new Date().getTime()) - startTime)); /////////////////////
 	for(i=0;i<6;i++){
 		for (j=0;j<EffectData[i].length;j++){
 			EffectData[i][j]=EffectData[i][j].concat(EffectDataEnd[i][j].reverse());
@@ -737,7 +848,7 @@ function DrawChart(densityx,densityy){
 			.attr("stroke-width", 1);}
 		}
 	};
-	console.log('Drawing completed: ' + ((new Date().getTime()) - startTime)); /////////////////////
+	//console.log('Drawing completed: ' + ((new Date().getTime()) - startTime)); /////////////////////
 	//var sumall=d3.sum(sumup);
 	for(i=0;i<6;i++){
 		//$("#tp"+i).text(Math.round(10000*sumup[i]/sumall)/100 + "%");
@@ -953,6 +1064,7 @@ var i=0;var j=0;var k=0;
 		spin: function(event, ui) {
 			if ( ui.value > 90 ) {return false;
 				}else if ( ui.value < 2 ) {return false;}
+			gwallh[mkindex] = ui.value;
 			AutoRedraw();}
 	});
 	$("#planeh").spinner({
@@ -980,12 +1092,12 @@ var i=0;var j=0;var k=0;
 	$("#lbradio1").click(function(){
 		$("#radio1").attr("checked", "checked");
 		$("#radio").buttonset('refresh');
-		ChangeMarker();
+		ChangeMarker();$("#btnadd").button("enable");
 		$("#btnturnw").removeClass().addClass("clr1");});
 	$("#lbradio2").click(function(){
 		$("#radio2").attr("checked", "checked");
 		$("#radio").buttonset('refresh');
-		ChangeMarker();
+		ChangeMarker();$("#btnadd").button("disable");
 		$("#btnturnw").removeClass().addClass("clr2");});
 	$("#btnturn").button();
 	$("#btnturn").click(function(){
@@ -998,6 +1110,14 @@ var i=0;var j=0;var k=0;
 		markerd.setPosition(markerc.getPosition());
 		markerc.setPosition(tlatlng);
 		}
+		});
+	$("#btnadd").button();
+	$("#btnadd").click(function(){
+		AddWall(map.getCenter());
+		$("#errdiv p").text(function (){return "请通过点击来确定目标墙体的位置"});
+		$("#error").show();
+		$("#error").delay(2000);
+		$("#error").fadeOut(500);
 		});
 	var xAxScale = d3.scale.linear().domain([0, 24]).range([padding*1.5, w - padding *1.5]);
 	var yAxScale = d3.scale.linear().domain([1,13]).range([h - padding, padding-1]);
@@ -1079,7 +1199,8 @@ var i=0;var j=0;var k=0;
 	</section>
 	<section id="tools">
 		<form id="radiogroup" onsubmit="return false;">
-		 <span class="wigtitle">更改地图上墙面：</span><span class="jquibt"><button id="btnturn" name="btnturn"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
+		<span class="wigtitle">更改地图上墙面：</span><span class="jquibt"><button id="btnturn" name="btnturn"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
+		<span class="jquibt"><button id="btnadd" name="btnadd" title="新增玻璃幕墙"><span id="btnaddw">+</span></button></span>
 		<div class="jquibt" id="radio">
 			<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1" id="lbradio1">玻璃幕墙 <span id="distance" class="num">0</span><span class="num">米</span></label>
 			<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">受照射墙面 <span id="distanceb" class="num">0</span><span class="num">米</span></label>

@@ -224,9 +224,11 @@ var markerd;
 var mkdel;
 var polyl = [];
 var poly,polyb;
+var pab1l = [];
+var pab1;
 var gwallh = [20];
 var geocoder;
-var visiblemark=false;
+var visiblemark = [false];
 
 //var Palette=["#9edae5","#1FB638","#1f77b4","#e377c2","#ff7f0e","#d62728"];//#06ADFF
 var Palette=["#9edae5","#AEFF5C","#FFD34D","#ff7f0e","#e377c2","#d62728"];
@@ -242,7 +244,6 @@ var midleTime = 0;
 var idleInterval = -1;
 var mkdelTimeout = -1;
 var xScale, yScale, xrevScale, yrevScale;
-var pab1;
 var nowcoord=[0,0];
 var mouseDownOnElement=false;
 function initialize() {
@@ -320,8 +321,8 @@ function initialize() {
 			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
 			offset: '50%'}]
 	});
-	pab1=new google.maps.Polygon({
-		path: [markera.getPosition(), 
+	pab1l.push(new google.maps.Polygon({
+		paths: [markera.getPosition(),
 		markerb.getPosition(),
 		markerc.getPosition(),
 		markerd.getPosition()],
@@ -330,7 +331,8 @@ function initialize() {
 		strokeWeight: 0,
 		visible: false,
 		map: map,
-	});
+	}));
+	pab1 = pab1l[0];
 	google.maps.event.addListener(map, 'click', function (event) {
 	if ($("#radio1").is(':checked')){
 		if (!markera.getVisible()) {
@@ -341,6 +343,8 @@ function initialize() {
 			markerb.setVisible(true);
 			poly.setPath([markera.getPosition(), markerb.getPosition()]);
 			poly.setVisible(true);
+			if (polyb.getVisible()){
+				visiblemark[mkindex]=true;}
 		} else {
 			markera.setPosition(event.latLng);
 			poly.setPath([markera.getPosition(), markerb.getPosition()]);
@@ -349,13 +353,13 @@ function initialize() {
 		if (!markerc.getVisible()) {
 			markerc.setPosition(event.latLng);
 			markerc.setVisible(true);
-			visiblemark=true;
+			visiblemark[mkindex]=true;
 		} else if (!markerd.getVisible()) {
 			markerd.setPosition(event.latLng);
 			markerd.setVisible(true);
 			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
 			polyb.setVisible(true);
-			visiblemark=true;
+			visiblemark[mkindex]=true;
 		} else {
 			markerc.setPosition(event.latLng);
 			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
@@ -390,18 +394,24 @@ function initialize() {
 	google.maps.event.addListener(poly, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(0);}
 	});
+	google.maps.event.addListener(pab1, 'click', function () {
+		if ($("#radio1").is(':checked')){ChangeWall(0);}
+	});
 	google.maps.event.addListener(mkdel, 'click', function () {
 		markera.setMap(null);
 		markerb.setMap(null);
 		poly.setMap(null);
+		pab1.setMap(null);
 		markeral.splice(mkindex,1);
 		markerbl.splice(mkindex,1);
 		polyl.splice(mkindex,1);
+		pab1l.splice(mkindex,1);
 		gwallh.splice(mkindex,1);
 		mkindex = 0;
 		markera = markeral[mkindex];
 		markerb = markerbl[mkindex];
 		poly = polyl[mkindex];
+		pab1 = pab1l[mkindex];
 		markera.setVisible(true);
 		markerb.setVisible(true);
 		mkdel.setVisible(false);
@@ -419,7 +429,7 @@ function ChangeMarker(){
 	}else{
 		markera.setVisible(false);
 		markerb.setVisible(false);
-		if (visiblemark){
+		if (visiblemark[mkindex]){
 			markerc.setVisible(true);
 			markerd.setVisible(true);
 			polyb.setVisible(true);
@@ -471,7 +481,21 @@ function AddWall(latlng) {
 	}));
 	poly = polyl[markeral.length-1];
 	poly.set('index',markeral.length-1);
+	pab1l.push(new google.maps.Polygon({
+		paths: [markera.getPosition(), 
+		markerb.getPosition(),
+		markerc.getPosition(),
+		markerd.getPosition()],
+		fillColor: "#FF8000",
+		fillOpacity: 0.5,
+		strokeWeight: 0,
+		visible: false,
+		map: map,
+	}));
+	pab1 = pab1l[markeral.length-1];
+	pab1.set('index',markeral.length-1);
 	gwallh.push(20);
+	visiblemark.push(false);
 	$("#wallh").spinner("value",20);
 	mkindex = markeral.length-1;
 	google.maps.event.addListener(markera, 'position_changed', function () {
@@ -485,6 +509,11 @@ function AddWall(latlng) {
 	google.maps.event.addListener(poly, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
 	});
+	google.maps.event.addListener(pab1, 'click', function () {
+		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
+	});
+	for (var x=0;x<markeral.length;x++){
+	pab1l[x].setVisible(false)}
 	//TriggerDel(latlng);
 }
 function TriggerDel(latlng) {
@@ -596,18 +625,20 @@ if (ho>0){
 		n=Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(bla)-Math.sin(ala)),2)+Math.pow((Math.cos(bla)-Math.cos(ala)*Math.cos(Math.abs(aln-bln))),2)+Math.pow((Math.cos(ala)*Math.sin(Math.abs(aln-bln))),2))/2));
 	}else{n=0};
 	if (ala<bla){n=Math.PI-n}; if (aln<bln){n=-n};
-	if (Math.sin(alpha-n)>0){if(draw){return -2}else{return 0};}
+	if (Math.sin(alpha-n)>0){if(draw !== -1){return -2}else{return 0};}
 	if (cla!==dla){
 		m=Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(dla)-Math.sin(cla)),2)+Math.pow((Math.cos(dla)-Math.cos(cla)*Math.cos(Math.abs(cln-dln))),2)+Math.pow((Math.cos(cla)*Math.sin(Math.abs(cln-dln))),2))/2));
 	}else{m=0};
 	if (cla<dla){m=Math.PI-m}; if (cln<dln){m=-m};
 	mu=2*n-alpha;
 	L=Hg/Math.tan(ho);
-	ala2=ala-(L*Math.cos(Math.PI-mu)*2/dearth);
-	aln2=aln+(L*Math.sin(Math.PI-mu)*2/dearth);
-	bla2=bla-(L*Math.cos(Math.PI-mu)*2/dearth);
-	bln2=bln+(L*Math.sin(Math.PI-mu)*2/dearth);
-	if (draw){lineGraph(ala,aln,ala2,aln2,bla2,bln2,bla,bln);}
+	if (draw !== -1){
+		ala2=ala-(L*Math.cos(Math.PI-mu)*2/dearth);
+		aln2=aln+(L*Math.sin(Math.PI-mu)*2/dearth);
+		bla2=bla-(L*Math.cos(Math.PI-mu)*2/dearth);
+		bln2=bln+(L*Math.sin(Math.PI-mu)*2/dearth);
+		lineGraph(draw,ala,aln,ala2,aln2,bla2,bln2,bla,bln);
+	};
 	if (Math.sin(mu-m)>0){return 0;};
 	x1=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(bla)-Math.sin(ala),2)+Math.pow(Math.cos(bla)-Math.cos(ala),2))/2);
 	y1=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(bla)-Math.cos(bla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(bla)*Math.sin(Math.abs(aln-bln)),2))/2);
@@ -654,10 +685,10 @@ if (lambda<Math.PI/12){
 };
 return 0;
 }
-function lineGraph(ala,aln,ala2,aln2,bla2,bln2,bla,bln){
-	if (visiblemark){
-	pab1.setOptions({
-		path: [new google.maps.LatLng(ala/pi180, aln/pi180), 
+function lineGraph(index,ala,aln,ala2,aln2,bla2,bln2,bla,bln){
+	if (visiblemark[index]){
+	pab1l[index].setOptions({
+		paths: [new google.maps.LatLng(ala/pi180, aln/pi180), 
 		new google.maps.LatLng(ala2/pi180, aln2/pi180),
 		new google.maps.LatLng(bla2/pi180, bln2/pi180),
 		new google.maps.LatLng(bla/pi180, bln/pi180)],
@@ -678,7 +709,7 @@ function timerIncrement() {
 	}
 }
 function AutoDraw(){
-	if (visiblemark){
+	if (visiblemark[mkindex]){
 	midleTime=0;
 	//pab1.setOptions({visible: false});
 	DrawLine(nowcoord,mouseDownOnElement);
@@ -688,7 +719,7 @@ function AutoDraw(){
 	};
 };
 function AutoRedraw(){
-	if (visiblemark){
+	if (visiblemark[mkindex]){
 	midleTime=4;
 	//pab1.setOptions({visible: false});
 	DrawLine(nowcoord,mouseDownOnElement);
@@ -736,6 +767,8 @@ function DrawChart(densityx,densityy){
 	pab1.length = 0;pab1=[]}*/
 	var startTime=new Date().getTime(); ///////////////////
 	var EffectData=new Array(6);
+	var al = []; var bl = [];
+	var wallcount = markeral.length;
 	var i = 0;
 	for(i=0;i<6;i++){
 		 EffectData[i]=[[]];
@@ -744,23 +777,29 @@ function DrawChart(densityx,densityy){
 	for(i=0;i<6;i++){
 		 EffectDataEnd[i]=[[]];
 	};
-	alat = markera.getPosition().lat() * pi180;
-	alng = markera.getPosition().lng() * pi180;
-	blat = markerb.getPosition().lat() * pi180;
-	blng = markerb.getPosition().lng() * pi180;
 	clat = markerc.getPosition().lat() * pi180;
 	clng = markerc.getPosition().lng() * pi180;
 	dlat = markerd.getPosition().lat() * pi180;
 	dlng = markerd.getPosition().lng() * pi180;
-	var avgla=(alat+blat)/2;
-	var avgln=(alng+blng)/2;
+	var avgla = 0; var avgln = 0;
+	for (var x=0;x<wallcount;x++){
+		alat = markeral[x].getPosition().lat() * pi180;
+		alng = markeral[x].getPosition().lng() * pi180;
+		blat = markerbl[x].getPosition().lat() * pi180;
+		blng = markerbl[x].getPosition().lng() * pi180;
+		al.push([alat,alng]);
+		bl.push([blat,blng]);
+		avgla+=alat+blat;
+		avgln+=alng+blng;
 
-	var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math.cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
-	var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
-	$("#grapharea").empty();
-	if (l>1500){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
-	if (dist()>200 || distb()>75){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
-
+		var k = Math.sqrt(Math.pow(Math.sin((clat+dlat)/2) - Math.sin((alat+blat)/2), 2) + Math.pow(Math.cos((clat+dlat)/2) - Math.cos((alat+blat)/2) * Math.cos(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2) + Math.pow(Math.cos((alat+blat)/2) * Math.sin(Math.abs((alng+blng)/2 - (clng+dlng)/2)), 2));
+		var l = Math.round(dearth * Math.asin(k / 2) * 100) / 100;
+		$("#grapharea").empty();
+		if (l>1500){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
+		if (dist()>200 || distb()>75){for(i=0;i<6;i++){$("#tp"+i).text("")};return 0}; 
+	}
+	avgla = avgla/wallcount/2;
+	avgln = avgln/wallcount/2;
 	//Create scale functions
 	var graph = d3.select("#grapharea");
 	var lineFunction = d3.svg.line()
@@ -792,7 +831,11 @@ function DrawChart(densityx,densityy){
 			lastnum = -1;
 			j = Math.ceil(calcrange[x][0]*60);
 			while (j<maxj){
-				nownum=Calc(i,j/60,alat,alng,blat,blng,clat,clng,dlat,dlng,h1,h2,l2,false);
+				nownum = -1;
+				for (y=0;y<wallcount;y++){
+					cn=Calc(i,j/60,al[y][0],al[y][1],bl[y][0],bl[y][1],clat,clng,dlat,dlng,gwallh[y],h2,l2,-1);
+					if (cn>nownum){nownum=cn};
+				};
 				if (nownum!==-1){if(i===364){
 					sumup[nownum]-=densityx*(365%densityy)
 					}else{sumup[nownum]+=densityx*densityy}};
@@ -836,7 +879,6 @@ function DrawChart(densityx,densityy){
 		};
 		if (i!==364 && i+densityy>364){i=364}else{i+=densityy}
 	};
-	//console.log('Calc completed: ' + ((new Date().getTime()) - startTime)); /////////////////////
 	for(i=0;i<6;i++){
 		for (j=0;j<EffectData[i].length;j++){
 			EffectData[i][j]=EffectData[i][j].concat(EffectDataEnd[i][j].reverse());
@@ -848,7 +890,6 @@ function DrawChart(densityx,densityy){
 			.attr("stroke-width", 1);}
 		}
 	};
-	//console.log('Drawing completed: ' + ((new Date().getTime()) - startTime)); /////////////////////
 	//var sumall=d3.sum(sumup);
 	for(i=0;i<6;i++){
 		//$("#tp"+i).text(Math.round(10000*sumup[i]/sumall)/100 + "%");
@@ -859,14 +900,6 @@ function DrawLine(coord,mouse){
 	if (coord[0]>padding*1.5 && coord[0]<w-padding*1.5
 		&& coord[1]>padding && coord[1]<h - padding){
 		mouseDownOnElement=mouse;
-		ala = markera.getPosition().lat() * pi180;
-		aln = markera.getPosition().lng() * pi180;
-		bla = markerb.getPosition().lat() * pi180;
-		bln = markerb.getPosition().lng() * pi180;
-		cla = markerc.getPosition().lat() * pi180;
-		cln = markerc.getPosition().lng() * pi180;
-		dla = markerd.getPosition().lat() * pi180;
-		dln = markerd.getPosition().lng() * pi180;
 		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
 		$("#tptext").attr("x", coord[0]+7);
 		$("#tptext").attr("y", coord[1]+10);
@@ -875,11 +908,21 @@ function DrawLine(coord,mouse){
 		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))));
 		nowDate.setMinutes(xrevScale(coord[0]));
 		$("#tptext").text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
-		val=Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,ala,aln,bla,bln,cla,cln,dla,dln,$("#wallh").spinner("value")*3,$("#planeh").spinner("value")*3,$("#window").slider("value"),true);
-		if (val>-1){
-		pab1.setOptions({fillColor: Palette[val],visible: true})
-		}else{pab1.setOptions({visible: false})}
-	}
+		cla = markerc.getPosition().lat() * pi180;
+		cln = markerc.getPosition().lng() * pi180;
+		dla = markerd.getPosition().lat() * pi180;
+		dln = markerd.getPosition().lng() * pi180;
+		for (var x=0;x<markeral.length;x++){
+			ala = markeral[x].getPosition().lat() * pi180;
+			aln = markeral[x].getPosition().lng() * pi180;
+			bla = markerbl[x].getPosition().lat() * pi180;
+			bln = markerbl[x].getPosition().lng() * pi180;
+			wallh = gwallh[x];
+			val=Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,ala,aln,bla,bln,cla,cln,dla,dln,wallh*3,$("#planeh").spinner("value")*3,$("#window").slider("value"),x);
+			if (val>-1){
+			pab1l[x].setOptions({fillColor: Palette[val], visible: true})
+			}else{pab1l[x].setOptions({visible: false})}
+	}}
 }
 $(document).ready(function() {
 if ($(document.body).width()>900){

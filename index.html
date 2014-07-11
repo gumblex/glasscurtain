@@ -584,14 +584,14 @@ function pointInPolygon(x,y,polyX,polyY) {
 	var i, j=polySides-1;
 	var oddNodes=false;
 	for (i=0; i<polySides; i++) {
-	if ((polyY[i]< y && polyY[j]>=y
-	||   polyY[j]< y && polyY[i]>=y)
-	&&  (polyX[i]<=x || polyX[j]<=x)) {
-	  oddNodes^=(polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])<x);}
+    if ((polyY[i]< y && polyY[j]>=y
+    ||   polyY[j]< y && polyY[i]>=y)
+    &&  (polyX[i]<=x || polyX[j]<=x)) {
+	  if (polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])<x) {
+        oddNodes=!oddNodes; }}
 	j=i; }
 	return oddNodes;
 }
-
 function Sunriseset(daynum, la, ln){
 	var a=Math.PI*2*(daynum+.5)/365;
 	var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
@@ -607,6 +607,8 @@ function Sunriseset(daynum, la, ln){
 		else{return [[0,t2],[t1,24]]}
 	}
 }
+function recx(la0,_ln0,lax,_lnx){return dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(lax)-Math.sin(la0),2)+Math.pow(Math.cos(lax)-Math.cos(la0),2))/2)};
+function recy(_la0,ln0,lax,lnx){return dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(lax)-Math.cos(lax)*Math.cos(Math.abs(ln0-lnx)),2)+Math.pow(Math.cos(lax)*Math.sin(Math.abs(ln0-lnx)),2))/2)};
 function Calc(daynum,time,ala,aln,bla,bln,cla,cln,dla,dln,Hg,Hp,lw,draw) {
 //daynum -> in one year
 //time -> 24h, DEG
@@ -640,20 +642,20 @@ if (ho>0){
 		lineGraph(draw,ala,aln,ala2,aln2,bla2,bln2,bla,bln);
 	};
 	if (Math.sin(mu-m)>0){return 0;};
-	x1=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(bla)-Math.sin(ala),2)+Math.pow(Math.cos(bla)-Math.cos(ala),2))/2);
-	y1=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(bla)-Math.cos(bla)*Math.cos(Math.abs(aln-bln)),2)+Math.pow(Math.cos(bla)*Math.sin(Math.abs(aln-bln)),2))/2);
-	x2=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(cla)-Math.sin(ala),2)+Math.pow(Math.cos(cla)-Math.cos(ala),2))/2);
-	y2=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(cla)-Math.cos(cla)*Math.cos(Math.abs(aln-cln)),2)+Math.pow(Math.cos(cla)*Math.sin(Math.abs(aln-cln)),2))/2);
-	x3=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(dla)-Math.sin(ala),2)+Math.pow(Math.cos(dla)-Math.cos(ala),2))/2);
-	y3=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(dla)-Math.cos(dla)*Math.cos(Math.abs(aln-dln)),2)+Math.pow(Math.cos(dla)*Math.sin(Math.abs(aln-dln)),2))/2);
+	x1=recx(ala,0,bla,0);
+	y1=recy(0,aln,bla,bln);
+	x2=recx(ala,0,cla,0);
+	y2=recy(0,aln,cla,cln);
+	x3=recx(ala,0,dla,0);
+	y3=recy(0,aln,dla,dln);
 	if (aln>bln){y1=-y1}; if (ala<bla){x1=-x1};
 	if (aln>cln){y2=-y2}; if (ala<cla){x2=-x2};
 	if (aln>dln){y3=-y3}; if (ala<dla){x3=-x3};
 
 	ela=(cla+dla)/2;
 	eln=(cln+dln)/2;
-	x4=dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(ela)-Math.sin(ala),2)+Math.pow(Math.cos(ela)-Math.cos(ala),2))/2);
-	y4=dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(ela)-Math.cos(ela)*Math.cos(Math.abs(aln-eln)),2)+Math.pow(Math.cos(ela)*Math.sin(Math.abs(aln-eln)),2))/2);
+	x4=recx(ala,0,ela,0);
+	y4=recy(0,aln,ela,eln);
 	x5=(y4-Math.tan(Math.PI-mu))/(y1/x1-Math.tan(Math.PI-mu));
 	y5=(y4-Math.tan(Math.PI-mu))*y1/((y1/x1-Math.tan(Math.PI-mu))*x1);
 	d=Math.sqrt(Math.pow(x4-x5,2)+Math.pow(y4-y5,2));
@@ -663,6 +665,7 @@ if (ho>0){
 	xb=x1+L*Math.cos(Math.PI-mu);
 	ya=L*Math.sin(Math.PI-mu);
 	yb=y1+L*Math.sin(Math.PI-mu);
+	if (draw !== -1) console.log([(x3*lw+x2*(100-lw))/100,(y3*lw+y2*(100-lw))/100,[0,xa,xb,x1],[0,ya,yb,y1]]);
 	if (!pointInPolygon((x3*lw+x2*(100-lw))/100,(y3*lw+y2*(100-lw))/100,[0,xa,xb,x1],[0,ya,yb,y1])){return 0};
 	gamma=-Math.PI/2+m-2*n+alpha;
 	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));

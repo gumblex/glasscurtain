@@ -55,7 +55,10 @@ p {
 	position:relative;
 	font-size:.8em;
 }
-#errdiv{margin: 2em 1em;position:relative;}
+#errdiv{
+	margin: 2em 1em;
+	position:relative;
+}
 .wigtitle{
 	color:#61380B;
 	font-weight: bold;
@@ -69,18 +72,40 @@ p {
 	-ms-user-select: none;
 	user-select: none;
 }
-.ui-spinner, .ui-slider{font-size: .875em;margin: 0 .25em 0;}
-.ui-spinner-input{width:1.75em; }
+.ui-spinner, .ui-slider{
+	font-size: .875em;
+	margin: 0 .25em 0;
+}
+.ui-spinner-input{
+	width: 1.75em;
+	text-align: right;
+}
 .slider {
 	display: inline-block;
 	width: 9%;
 }
-.unit{padding-right:1em}
+.unit{
+	padding-right:1em
+}
+.unittime{
+	padding-right:.2em
+}
 .info {
 	margin-bottom: 2em;
 }
 .num {
 	color: #175086;
+}
+#sptimegroup {
+	display: block;
+	position: relative;
+	float: right;
+	margin: 0 1em;
+	font-size: 0.8em;
+}
+.sptimegroupsmall {
+	display: inline-block;
+	margin-right: 0.5em;
 }
 #simpleSearch {
 	display: block;
@@ -900,17 +925,18 @@ function DrawChart(densityx,densityy){
 	};
 }
 function DrawLine(coord,mouse){
-	if (coord[0]>padding*1.5 && coord[0]<w-padding*1.5
-		&& coord[1]>padding && coord[1]<h - padding){
+	if (coord[0]>=padding*1.5 && coord[0]<=w-padding*1.5
+		&& coord[1]>=padding && coord[1]<=h - padding){
 		mouseDownOnElement=mouse;
 		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
 		$("#tptext").attr("x", coord[0]+7);
 		$("#tptext").attr("y", coord[1]+10);
 		var nowDate = new Date();
-		var startD = new Date(nowDate.getFullYear(), 0);
-		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))));
+		var startD = new Date(2014, 0);
+		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))+1));
 		nowDate.setMinutes(xrevScale(coord[0]));
 		$("#tptext").text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
+		if (typeof map === "undefined") {return};
 		cla = markerc.getPosition().lat() * pi180;
 		cln = markerc.getPosition().lng() * pi180;
 		dla = markerd.getPosition().lat() * pi180;
@@ -925,199 +951,251 @@ function DrawLine(coord,mouse){
 			if (val>-1){
 			pab1l[x].setOptions({fillColor: Palette[val], visible: true})
 			}else{pab1l[x].setOptions({visible: false})}
-	}}
+		}
+	}
 }
+function dayspin(month, day){
+	nowcoord=[nowcoord[0], yScale(Math.floor(((new Date(2014, month-1, day))-(new Date(2014, 0)))/86400000))];
+	DrawLine(nowcoord,false);
+}
+function timespin(hour, minute){
+	nowcoord=[xScale(hour*60+minute), nowcoord[1]];
+	DrawLine(nowcoord,false);
+}
+$.widget("ui.minutespinner", $.ui.spinner, {
+	options: {
+		step: 1,
+		page: 5
+    },
+	_parse: function (value) {
+		if (typeof value === "string") {
+			return parseInt(value, 10);
+		}
+		return value;
+	},
+	_format: function (value) {
+		return ("0" + value).slice(-2);
+	}
+});
 $(document).ready(function() {
-if ($(document.body).width()>900){
-	w = $(document.body).width() * 0.39;
-	var lgsvg = d3.select("#chart-legend").append("svg").attr("width", w).attr("height", 120);
-	lgsvg.append("g").selectAll("rect")
-		.data(Palette.slice(0,3))
-		.enter()
-		.append("rect")
-		.attr("x", 2)
-		.attr("y", function(d,i) {return i*lineHeight;})
-		.attr("width", 30)
-		.attr("height", 20)
-		.attr("fill", function(d) {return d;});
-	lgsvg.append("g").selectAll("text")
-		.data(efname.slice(0,3))
-		.enter()
-		.append("text")
-		.attr("x", 40)
-		.attr("y", function(d,i) {return i*lineHeight+16;})
-		.style("font-size","16px")
-		.text(function(d) {return d;});
-	lgsvg.append("g").selectAll("rect")
-		.data(Palette.slice(3,6))
-		.enter()
-		.append("rect")
-		.attr("x", w*.45+2)
-		.attr("y", function(d,i) {return i*lineHeight;})
-		.attr("width", 30)
-		.attr("height", 20)
-		.attr("fill", function(d) {return d;});
-	lgsvg.append("g").selectAll("text")
-		.data(efname.slice(3,6))
-		.enter()
-		.append("text")
-		.attr("x", w*.45+40)
-		.attr("y", function(d,i) {return i*lineHeight+16;})
-		.style("font-size","16px")
-		.text(function(d) {return d;});
-	lgsvg.append("g").attr("id", "lgpercent");
-	lgsvg.append("g").attr("id", "lgpercent2");
-	lgsvg.select("#lgpercent").selectAll("text")
-		.data(new Array(3))
-		.enter()
-		.append("text")
-		.attr("id",function(d,i) {return "tp" + i;})
-		.attr("x", 116)
-		.attr("y", function(d,i) {return i*lineHeight+16;})
-		.style("font-size","16px")
-		.style("fill","#175086")
-		.text(function(d) {return "";});
-	lgsvg.select("#lgpercent2").selectAll("text")
-		.data(new Array(3))
-		.enter()
-		.append("text")
-		.attr("id",function(d,i) {return "tp" + (i+3);})
-		.attr("x", w*.45+116)
-		.attr("y", function(d,i) {return i*lineHeight+16;})
-		.style("font-size","16px")
-		.style("fill","#175086")
-		.text(function(d) {return "";});
-	lgsvg.append("rect")
-		.attr("x", 2)
-		.attr("y", 3*lineHeight)
-		.attr("width", 30)
-		.attr("height", 20)
-		.attr("fill","#F0F0F0");
-	lgsvg.append("text")
-		.attr("x", 40)
-		.attr("y", 3*lineHeight+16)
-		.style("font-size","16px")
-		.text("无日光");
-	lgsvg.append("path")
-		.attr("class","tpointer")
-		.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
-		.attr("transform","translate("+(w*.45+18)+","+(3*lineHeight+10)+")");
-	lgsvg.append("text")
-		.attr("x", w*.45+40)
-		.attr("y", 3*lineHeight+16)
-		.style("font-size","16px")
-		.text("选择时间");
-}else{
-	w = $(document.body).width() * 0.6;
-	h = 275;
-	lineHeight=25;
-	$('#graph').insertAfter('#map-canvas');
-	$('#chart-legend').insertBefore('#chart-svg');
-	$('#map-canvas').css('width','100%');
-	$('#map-canvas').css('height','300');
-	$('#graph').css('float','none');
-	$('#graph').css('width','100%');
-	$("#chart-legend").css('float','right');
-	$("#chart-legend").css('width','35%');
-	$("#chart-svg").css('width','60%');
-	$("#chart-svg").css('height',h+10);
-	$("#simpleSearch").css('margin-right','1em');
-	$("#simpleSearch").css('width',w*.48);
-	var lgsvg = d3.select("#chart-legend").append("svg").attr("width",$(document.body).width()*0.35).attr("height", h-50);
-	lgsvg.selectAll("rect")
-		.data(Palette)
-		.enter()
-		.append("rect")
-		.attr("x", 2)
-		.attr("y", function(d,i) {return i*lineHeight;})
-		.attr("width", 30)
-		.attr("height", 20)
-		.attr("fill", function(d) {return d;});
-	lgsvg.selectAll("text")
-		.data(efname)
-		.enter()
-		.append("text")
-		.attr("x", 40)
-		.attr("y", function(d,i) {return i*lineHeight+16;})
-		.style("font-size","16px")
-		.text(function(d) {return d;});
-	lgsvg.append("g").attr("id", "lgpercent");
-	lgsvg.select("#lgpercent").selectAll("text")
-		.data(efname)
-		.enter()
-		.append("text")
-		.attr("id",function(d,i) {return "tp" + i;})
-		.attr("x", 125)
-		.attr("y", function(d,i) {return i*lineHeight+16;})
-		.style("font-size","16px")
-		.style("fill","#175086")
-		.text(function(d) {return "";});
-	lgsvg.append("rect")
-		.attr("x", 2)
-		.attr("y", 6*lineHeight)
-		.attr("width", 30)
-		.attr("height", 20)
-		.attr("fill","#F0F0F0");
-	lgsvg.append("text")
-		.attr("x", 40)
-		.attr("y", 6*lineHeight+16)
-		.style("font-size","16px")
-		.text("无日光");
-	lgsvg.append("path")
-		.attr("class","tpointer")
-		.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
-		.attr("transform","translate("+18+","+(7*lineHeight+10)+")");
-	lgsvg.append("text")
-		.attr("x", 40)
-		.attr("y", 7*lineHeight+16)
-		.style("font-size","16px")
-		.text("选择时间");
-}
+	if ($(document.body).width()>900){
+		w = $(document.body).width() * 0.39;
+		var lgsvg = d3.select("#chart-legend").append("svg").attr("width", w).attr("height", 120);
+		lgsvg.append("g").selectAll("rect")
+			.data(Palette.slice(0,3))
+			.enter()
+			.append("rect")
+			.attr("x", 2)
+			.attr("y", function(d,i) {return i*lineHeight;})
+			.attr("width", 30)
+			.attr("height", 20)
+			.attr("fill", function(d) {return d;});
+		lgsvg.append("g").selectAll("text")
+			.data(efname.slice(0,3))
+			.enter()
+			.append("text")
+			.attr("x", 40)
+			.attr("y", function(d,i) {return i*lineHeight+16;})
+			.style("font-size","16px")
+			.text(function(d) {return d;});
+		lgsvg.append("g").selectAll("rect")
+			.data(Palette.slice(3,6))
+			.enter()
+			.append("rect")
+			.attr("x", w*.45+2)
+			.attr("y", function(d,i) {return i*lineHeight;})
+			.attr("width", 30)
+			.attr("height", 20)
+			.attr("fill", function(d) {return d;});
+		lgsvg.append("g").selectAll("text")
+			.data(efname.slice(3,6))
+			.enter()
+			.append("text")
+			.attr("x", w*.45+40)
+			.attr("y", function(d,i) {return i*lineHeight+16;})
+			.style("font-size","16px")
+			.text(function(d) {return d;});
+		lgsvg.append("g").attr("id", "lgpercent");
+		lgsvg.append("g").attr("id", "lgpercent2");
+		lgsvg.select("#lgpercent").selectAll("text")
+			.data(new Array(3))
+			.enter()
+			.append("text")
+			.attr("id",function(d,i) {return "tp" + i;})
+			.attr("x", 116)
+			.attr("y", function(d,i) {return i*lineHeight+16;})
+			.style("font-size","16px")
+			.style("fill","#175086")
+			.text(function(d) {return "";});
+		lgsvg.select("#lgpercent2").selectAll("text")
+			.data(new Array(3))
+			.enter()
+			.append("text")
+			.attr("id",function(d,i) {return "tp" + (i+3);})
+			.attr("x", w*.45+116)
+			.attr("y", function(d,i) {return i*lineHeight+16;})
+			.style("font-size","16px")
+			.style("fill","#175086")
+			.text(function(d) {return "";});
+		lgsvg.append("rect")
+			.attr("x", 2)
+			.attr("y", 3*lineHeight)
+			.attr("width", 30)
+			.attr("height", 20)
+			.attr("fill","#F0F0F0");
+		lgsvg.append("text")
+			.attr("x", 40)
+			.attr("y", 3*lineHeight+16)
+			.style("font-size","16px")
+			.text("无日光");
+		lgsvg.append("path")
+			.attr("class","tpointer")
+			.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
+			.attr("transform","translate("+(w*.45+18)+","+(3*lineHeight+10)+")");
+		lgsvg.append("text")
+			.attr("x", w*.45+40)
+			.attr("y", 3*lineHeight+16)
+			.style("font-size","16px")
+			.text("选择时间");
+	}else{
+		w = $(document.body).width() * 0.6;
+		h = 275;
+		lineHeight=25;
+		$('#graph').insertAfter('#map-canvas');
+		$('#sptimegroup').insertAfter('#graph');
+		$('#sptimegroup').css('float','none');
+		$('#chart-legend').insertBefore('#chart-svg');
+		$('#map-canvas').css('width','100%');
+		$('#map-canvas').css('height','300');
+		$('#graph').css('float','none');
+		$('#graph').css('width','100%');
+		$("#chart-legend").css('float','right');
+		$("#chart-legend").css('width','35%');
+		$("#chart-svg").css('width','60%');
+		$("#chart-svg").css('height',h+10);
+		$("#simpleSearch").css('margin-right','1em');
+		$("#simpleSearch").css('width',w*.48);
+		var lgsvg = d3.select("#chart-legend").append("svg").attr("width",$(document.body).width()*0.35).attr("height", h-50);
+		lgsvg.selectAll("rect")
+			.data(Palette)
+			.enter()
+			.append("rect")
+			.attr("x", 2)
+			.attr("y", function(d,i) {return i*lineHeight;})
+			.attr("width", 30)
+			.attr("height", 20)
+			.attr("fill", function(d) {return d;});
+		lgsvg.selectAll("text")
+			.data(efname)
+			.enter()
+			.append("text")
+			.attr("x", 40)
+			.attr("y", function(d,i) {return i*lineHeight+16;})
+			.style("font-size","16px")
+			.text(function(d) {return d;});
+		lgsvg.append("g").attr("id", "lgpercent");
+		lgsvg.select("#lgpercent").selectAll("text")
+			.data(efname)
+			.enter()
+			.append("text")
+			.attr("id",function(d,i) {return "tp" + i;})
+			.attr("x", 125)
+			.attr("y", function(d,i) {return i*lineHeight+16;})
+			.style("font-size","16px")
+			.style("fill","#175086")
+			.text(function(d) {return "";});
+		lgsvg.append("rect")
+			.attr("x", 2)
+			.attr("y", 6*lineHeight)
+			.attr("width", 30)
+			.attr("height", 20)
+			.attr("fill","#F0F0F0");
+		lgsvg.append("text")
+			.attr("x", 40)
+			.attr("y", 6*lineHeight+16)
+			.style("font-size","16px")
+			.text("无日光");
+		lgsvg.append("path")
+			.attr("class","tpointer")
+			.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
+			.attr("transform","translate("+18+","+(7*lineHeight+10)+")");
+		lgsvg.append("text")
+			.attr("x", 40)
+			.attr("y", 7*lineHeight+16)
+			.style("font-size","16px")
+			.text("选择时间");
+	}
 
-xScale = d3.scale.linear()
-	.domain([0, 1439])
-	.range([padding*1.5, w - padding * 1.5]);
-yScale = d3.scale.linear()
-	.domain([0, 364])
-	.range([h - padding, padding]);
-xrevScale = d3.scale.linear()
-	.domain([padding*1.5, w - padding * 1.5])
-	.range([0, 1439]);
-yrevScale = d3.scale.linear()
-	.domain([h - padding, padding])
-	.range([0, 364]);
+	xScale = d3.scale.linear()
+		.domain([0, 1439])
+		.range([padding*1.5, w - padding * 1.5]);
+	yScale = d3.scale.linear()
+		.domain([0, 364])
+		.range([h - padding, padding]);
+	xrevScale = d3.scale.linear()
+		.domain([padding*1.5, w - padding * 1.5])
+		.range([0, 1439]);
+	yrevScale = d3.scale.linear()
+		.domain([h - padding, padding])
+		.range([0, 364]);
 
-var i=0;var j=0;var k=0;
-	/*$("#wallh").slider({
-		orientation: "horizontal",
-		range: "min",
-		max: 75,
-		min: 2,
-		value: 20,
-		slide: function(event, ui) {$("#wallh-n").text( ui.value );},
-		change: function(event, ui) {$("#wallh-n").text( ui.value );AutoRedraw();}
+	var i=0;var j=0;var k=0;
+	var nowDate = new Date();
+	// 2014 instead of nowDate.getFullYear() because we need a common year.
+	var startD = new Date(2014, 0);
+	// $(this).spinner("value", 1);
+	$("#smonth").spinner({
+		spin: function(event, ui) {
+			if (ui.value > 12) {$(this).spinner("value", 1);dayspin(1, $("#sday").spinner("value"));return false;
+				}else if (ui.value < 1) {$(this).spinner("value", 12);dayspin(12, $("#sday").spinner("value"));return false};
+			dayspin(ui.value, $("#sday").spinner("value"))},
+		change: function(event, ui) {
+			dayspin($("#smonth").spinner("value"), $("#sday").spinner("value"))}
 	});
-	$("#planeh").slider({
-		orientation: "horizontal",
-		range: "min",
-		max: 50,
-		min: 1,
-		value: 6,
-		slide: function(event, ui) {$("#planeh-n").text( ui.value );},
-		change: function(event, ui) {$("#planeh-n").text( ui.value );AutoRedraw();}
-	});*/
+	$("#sday").spinner({
+		spin: function(event, ui) {
+			if (ui.value > 31) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false;
+			} else if (ui.value < 1) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false};
+			if ([4,6,9,11].indexOf($("#smonth").spinner("value")) > -1) {
+				if (ui.value > 30) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false}
+			} else if ($("#smonth").spinner("value") === 2 && ui.value > 28) {
+				$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false};
+			dayspin($("#smonth").spinner("value"), ui.value)},
+		change: function(event, ui) {
+			dayspin($("#smonth").spinner("value"), $("#sday").spinner("value"))}
+	});
+	$("#shour").spinner({
+		spin: function(event, ui) {
+			if (ui.value > 23) {$(this).spinner("value", 0);timespin(0, $("#sminute").minutespinner("value"));return false;
+				}else if (ui.value < 0) {$(this).spinner("value", 23);timespin(23, $("#sminute").minutespinner("value"));return false};
+			timespin(ui.value, $("#sminute").minutespinner("value"))},
+		change: function(event, ui) {
+			timespin($("#shour").spinner("value"), $("#sminute").minutespinner("value"))}
+	});
+	$("#sminute").minutespinner({
+		spin: function(event, ui) {
+			if (ui.value > 59) {$(this).minutespinner("value", 0);timespin($("#shour").spinner("value"), 0);return false;
+				}else if (ui.value < 0) {$(this).minutespinner("value", 59);timespin($("#shour").spinner("value"), 59);return false};
+			timespin($("#shour").spinner("value"), ui.value)},
+		change: function(event, ui) {
+			timespin($("#shour").spinner("value"), $("#sminute").minutespinner("value"))}
+	});
 	$("#wallh").spinner({
 		spin: function(event, ui) {
-			if ( ui.value > 90 ) {return false;
-				}else if ( ui.value < 2 ) {return false;}
+			if (ui.value > 90) {return false;
+				}else if (ui.value < 2) {return false;}
 			gwallh[mkindex] = ui.value;
+			AutoRedraw();},
+		change: function(event, ui) {
+			gwallh[mkindex] = $("#wallh").spinner("value");
 			AutoRedraw();}
 	});
 	$("#planeh").spinner({
 		spin: function(event, ui) {
-			if ( ui.value > 60 ) {return false;
-				}else if ( ui.value < 1 ) {return false;}
-			AutoRedraw();}
+			if (ui.value > 60) {return false;
+				}else if (ui.value < 1) {return false;}
+			AutoRedraw();},
+		change: function(event, ui) {AutoRedraw()}
 	});
 	$("#window").slider({
 		orientation: "horizontal",
@@ -1191,8 +1269,6 @@ var i=0;var j=0;var k=0;
 		.attr("transform", "translate(0," + (h - padding) + ")").call(xAxis);
 	svg.append("g").attr("class", "axis ay")
 		.attr("transform", "translate(" + padding*1.5 + ",0)").call(yAxis);
-	var nowDate = new Date();
-	var startD = new Date(nowDate.getFullYear(), 0);
 	svg.append("path")
 		.attr("id","tpoint")
 		.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
@@ -1202,8 +1278,12 @@ var i=0;var j=0;var k=0;
 		.attr("id","tptext")
 		.attr("x", xScale(nowDate.getHours()*60+nowDate.getMinutes())+7)
 		.attr("y", yScale(Math.floor((nowDate-startD)/86400000))+10)
-		.style("fill","#111111")
-		.text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
+		.style("fill","#111111");
+		//.text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
+	$("#smonth").spinner("value", nowDate.getMonth()+1);
+	$("#sday").spinner("value", nowDate.getDate());
+	$("#shour").spinner("value", nowDate.getHours());
+	$("#sminute").minutespinner("value", nowDate.getMinutes());
 	nowcoord=[xScale(nowDate.getHours()*60+nowDate.getMinutes()),yScale(Math.floor((nowDate-startD)/86400000))];
 	$(".axis text").mousedown(function(){return false});
 	$(".axis text").mousemove(function(){return false});
@@ -1240,6 +1320,13 @@ var i=0;var j=0;var k=0;
 	<section id="graph">
 		<div id="chart-svg"></div>
 		<div id="chart-legend">
+			<div id="sptimegroup"><div class="sptimegroupsmall">
+			<input id="smonth" class="jquisp" value="1">月
+			<input id="sday" class="jquisp" value="1">日</div>
+			<div class="sptimegroupsmall">
+			<input id="shour" class="jquisp" value="0">:
+			<input id="sminute" class="jquisp" value="00"></div>
+			</div>
 			<h2>图例</h2>
 		</div>
 	</section>

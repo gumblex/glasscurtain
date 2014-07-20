@@ -15,7 +15,7 @@
 body {
 	margin: .5em 2em;
 	background-color: #FBF8EF;
-	font-family: 'Helvetica Neue', HelveticaNeue, Helvetica, Arial, sans-serif;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 header{
 	margin-top: 0;
@@ -270,7 +270,7 @@ var idleInterval = -1;
 var mkdelTimeout = -1;
 var xScale, yScale, xrevScale, yrevScale;
 var nowcoord=[0,0];
-var mouseDownOnElement=false;
+//var mouseDownOnElement=false;
 function initialize() {
 	if (typeof google === "undefined") {return};
 	var mapOptions = {
@@ -726,13 +726,13 @@ function lineGraph(index,ala,aln,ala2,aln2,bla2,bln2,bla,bln){
 function timerIncrement() {
 	midleTime++;
 	if (midleTime === 5) { // 500ms
-		DrawLine(nowcoord,mouseDownOnElement);
+		DrawLine(nowcoord);
 		DrawChart(3,3);
 	}else if (midleTime > 50){
 		clearInterval(idleInterval);
 		idleInterval=-1;
 		midleTime=0;
-		DrawLine(nowcoord,mouseDownOnElement);
+		DrawLine(nowcoord);
 		DrawChart(2,1);
 	}
 }
@@ -740,7 +740,7 @@ function AutoDraw(){
 	if (visiblemark[mkindex]){
 	midleTime=0;
 	//pab1.setOptions({visible: false});
-	DrawLine(nowcoord,mouseDownOnElement);
+	DrawLine(nowcoord);
 	if (idleInterval===-1){idleInterval = setInterval(timerIncrement, 100)
 	};
 	//timeoutIDb=setTimeout("AutoRedraw();timeoutIDb=-1",500);
@@ -750,7 +750,7 @@ function AutoRedraw(){
 	if (visiblemark[mkindex]){
 	midleTime=4;
 	//pab1.setOptions({visible: false});
-	DrawLine(nowcoord,mouseDownOnElement);
+	DrawLine(nowcoord);
 	if (idleInterval===-1){idleInterval = setInterval(timerIncrement, 100)
 	};
 	//timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
@@ -924,10 +924,10 @@ function DrawChart(densityx,densityy){
 		$("#tp"+i).text(Math.round(sumup[i]/60) + "h");
 	};
 }
-function DrawLine(coord,mouse){
-	if (coord[0]>=padding*1.5 && coord[0]<=w-padding*1.5
-		&& coord[1]>=padding && coord[1]<=h - padding){
-		mouseDownOnElement=mouse;
+function DrawLine(coord){
+	if (coord[0]>=padding*1.5 && coord[0]<w-padding*1.5
+		&& coord[1]>padding && coord[1]<=h - padding){
+		//mouseDownOnElement=mouse;
 		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
 		$("#tptext").attr("x", coord[0]+7);
 		$("#tptext").attr("y", coord[1]+10);
@@ -956,11 +956,22 @@ function DrawLine(coord,mouse){
 }
 function dayspin(month, day){
 	nowcoord=[nowcoord[0], yScale(Math.floor(((new Date(2014, month-1, day))-(new Date(2014, 0)))/86400000))];
-	DrawLine(nowcoord,false);
+	DrawLine(nowcoord);
 }
 function timespin(hour, minute){
 	nowcoord=[xScale(hour*60+minute), nowcoord[1]];
-	DrawLine(nowcoord,false);
+	DrawLine(nowcoord);
+}
+function cursorchange(coord){
+	if (coord[0]>=padding*1.5 && coord[0]<w-padding*1.5
+		&& coord[1]>=padding && coord[1]<=h - padding){
+	var nowDate = new Date((new Date(2014, 0)).setDate(Math.floor(yrevScale(coord[1]))+1));
+	nowDate.setMinutes(xrevScale(coord[0]));
+	$("#smonth").spinner("value", nowDate.getMonth()+1);
+	$("#sday").spinner("value", nowDate.getDate());
+	$("#shour").spinner("value", nowDate.getHours());
+	$("#sminute").minutespinner("value", nowDate.getMinutes());
+	}
 }
 $.widget("ui.minutespinner", $.ui.spinner, {
 	options: {
@@ -1205,7 +1216,7 @@ $(document).ready(function() {
 		value: 50,
 		slide: function(event, ui) {polyb.setOptions({icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2}, offset: '5px', repeat: '10px'},
 			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
-			offset: ui.value + '%'}]});DrawLine(nowcoord,mouseDownOnElement);},
+			offset: ui.value + '%'}]});DrawLine(nowcoord);},
 		change: function(event, ui) {
 			polyb.setOptions({icons: [{icon: {path: 'M 0,0 2,2', strokeOpacity: 1, strokeWeight: 2}, offset: '5px', repeat: '10px'},
 			{icon: {path: 'M -1.5,-2 1.5,-2 1.5,2 -1.5,2 Z', fillColor: "#FF66D9", fillOpacity: 0.8, strokeWeight: 0},
@@ -1255,9 +1266,12 @@ $(document).ready(function() {
 				  .tickFormat("").tickSize(h - padding*2,0);
 	var yGrid = d3.svg.axis().scale(yGrScale).orient("right").ticks(12)
 				  .tickFormat("").tickSize(w - padding*3,0);
-	var svg = d3.select("#chart-svg").append("svg").attr("width", w).attr("height", h).on("mousedown", function() {nowcoord=d3.mouse(this);DrawLine(d3.mouse(this),true)})
-	.on("mousemove", function() {if (mouseDownOnElement){nowcoord=d3.mouse(this);DrawLine(d3.mouse(this),true)}})
-	.on("mouseup", function() {nowcoord=d3.mouse(this);DrawLine(d3.mouse(this),false)});
+	var svg = d3.select("#chart-svg").append("svg").attr("width", w).attr("height", h).on("mousedown", function() {
+		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))});
+	//.on("mousemove", function() {if (mouseDownOnElement){
+		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))}})
+	//.on("mouseup", function() {
+		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))});
 	svg.append("rect").attr("x", padding*1.5).attr("y", padding-1).attr("width", w - padding*3).attr("height", h - padding*2+1).attr("fill","#F0F0F0");
 	svg.append("g").attr("id", "grapharea");
 	grida=svg.append("g").attr("class", "gridarea");

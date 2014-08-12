@@ -84,7 +84,7 @@ Polygon.prototype.points = function () {
 	var selfiter = this.iter(), v, kv = 0;
 	for (kv=0;kv<selfiter.length;kv++) {
 		v = selfiter[kv];
-		p.push([v.x, v.y]);
+		p.push({x: v.x, y: v.y});
 	}
 	return p;
 };
@@ -198,14 +198,23 @@ function intersect(s1, s2, c1, c2) {
 	}
 	return;
 }
-function clip_polygon_difference(subject, clipper) {
+function clip_polygon(subject, clipper, operation) {
 	var Subject = new Polygon(), Clipper = new Polygon();
 	var k = 0;
 	for (k=0;k<subject.length;k++) {
-		Subject.add(new Vertex({x: subject[k][0], y: subject[k][1]}));}
+		Subject.add(new Vertex(subject[k]));}
 	for (k=0;k<clipper.length;k++) {
-		Clipper.add(new Vertex({x: clipper[k][0], y: clipper[k][1]}));}
-	var clipped = Subject.clip(Clipper, false, true);
+		Clipper.add(new Vertex(clipper[k]));}
+	var clipped;
+	if (operation === 'difference') {
+		clipped = Subject.difference(Clipper);
+	} else if (operation === 'reversed-diff') {
+		clipped = Clipper.difference(Subject);
+	} else if (operation === 'union') {
+		clipped = Subject.union(Clipper);
+	} else if (operation === 'intersection') {
+		clipped = Subject.intersection(Clipper);
+	}
 	var clippedlist = [];
 	for (k=0;k<clipped.length;k++) {clippedlist.push(clipped[k].points());}
 	return clippedlist;

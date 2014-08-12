@@ -9,6 +9,7 @@
 <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0&sensor=true"></script>
 <script src="jquery-1.10.2.min.js"></script>
 <script src="jquery-ui-1.10.4.custom.min.js"></script>
+<script src="greinerclip.js"></script>
 <link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.custom.min.css">
 <script src="d3.v3.min.js"></script>
 <style>
@@ -272,13 +273,13 @@ var xScale, yScale, xrevScale, yrevScale;
 var nowcoord=[0,0];
 //var mouseDownOnElement=false;
 function initialize() {
-	if (typeof google === "undefined") {return};
+	if (typeof google === "undefined") {return;}
 	var mapOptions = {
 		zoom: 12,
 		center: new google.maps.LatLng(31.231, 121.474),
 		mapTypeId: google.maps.MapTypeId.ROADMAP,
 		streetViewControl: false
-	}
+	};
 	geocoder = new google.maps.Geocoder();
 	google.maps.visualRefresh = true;
 	map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
@@ -441,6 +442,7 @@ function initialize() {
 		markerb.setVisible(true);
 		mkdel.setVisible(false);
 		$("#wallh").spinner("value",gwallh[mkindex]);
+		AutoRedraw();
 	});
 	$("#radiogroup").change(function(){ChangeMarker();});
 }
@@ -604,16 +606,15 @@ function distb() {
 	}else{$("#distanceb").css("color","#175086")}; 
 	return Math.round(s);
 }
-function pointInPolygon(x,y,polyX,polyY) {
+function pointInPolygon(x,y,poly) {
 	var polySides=4;
 	var i, j=polySides-1;
 	var oddNodes=false;
 	for (i=0; i<polySides; i++) {
-    if ((polyY[i]< y && polyY[j]>=y
-    ||   polyY[j]< y && polyY[i]>=y)
-    &&  (polyX[i]<=x || polyX[j]<=x)) {
-	  if (polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])<x) {
-        oddNodes=!oddNodes; }}
+    if ((poly[i][1]< y && poly[j][1]>=y
+    ||   poly[j][1]< y && poly[i][1]>=y)
+    &&  (poly[i][0]<=x || poly[j][0]<=x)) {
+	  if (poly[i][0]+(y-poly[i][1])/(poly[j][1]-poly[i][1])*(poly[j][0]-poly[i][0])<x) {oddNodes=!oddNodes; }}
 	j=i; }
 	return oddNodes;
 }
@@ -690,7 +691,7 @@ if (ho>0){
 	xb=x1+L*Math.cos(Math.PI-mu);
 	ya=L*Math.sin(Math.PI-mu);
 	yb=y1+L*Math.sin(Math.PI-mu);
-	if (draw !== -1) console.log([(x3*lw+x2*(100-lw))/100,(y3*lw+y2*(100-lw))/100,[0,xa,xb,x1],[0,ya,yb,y1]]);
+	// if (draw !== -1) console.log([(x3*lw+x2*(100-lw))/100,(y3*lw+y2*(100-lw))/100,[0,xa,xb,x1],[0,ya,yb,y1]]);
 	if (!pointInPolygon((x3*lw+x2*(100-lw))/100,(y3*lw+y2*(100-lw))/100,[0,xa,xb,x1],[0,ya,yb,y1])){return 0};
 	gamma=-Math.PI/2+m-2*n+alpha;
 	lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(ho)));
@@ -795,9 +796,9 @@ function DrawChart(densityx,densityy){
 	pab1.length = 0;pab1=[]}*/
 	var startTime=new Date().getTime(); ///////////////////
 	var EffectData=new Array(6);
-	var al = []; var bl = [];
+	var walls = [];
 	var wallcount = markeral.length;
-	var i = 0;
+	var i = 0, j = 0, k = 0, x = 0;
 	for(i=0;i<6;i++){
 		 EffectData[i]=[[]];
 	};
@@ -810,13 +811,12 @@ function DrawChart(densityx,densityy){
 	dlat = markerd.getPosition().lat() * pi180;
 	dlng = markerd.getPosition().lng() * pi180;
 	var avgla = 0; var avgln = 0;
-	for (var x=0;x<wallcount;x++){
+	for (x=0;x<wallcount;x++){
 		alat = markeral[x].getPosition().lat() * pi180;
 		alng = markeral[x].getPosition().lng() * pi180;
 		blat = markerbl[x].getPosition().lat() * pi180;
 		blng = markerbl[x].getPosition().lng() * pi180;
-		al.push([alat,alng]);
-		bl.push([blat,blng]);
+		walls.push([{la: alat, ln: alng}, {la: blat, ln: blng}]);
 		avgla+=alat+blat;
 		avgln+=alng+blng;
 
@@ -854,7 +854,7 @@ function DrawChart(densityx,densityy){
 		nowend=[[],[],[],[],[],[]];
 		//lastnum=-1;j=0;
 		calcrange = Sunriseset(i, avgla, avgln);
-		for (var x=0;x<calcrange.length;x++){
+		for (x=0;x<calcrange.length;x++){
 			maxj = Math.ceil(calcrange[x][1]*60);
 			lastnum = -1;
 			j = Math.ceil(calcrange[x][0]*60);
@@ -1269,9 +1269,9 @@ $(document).ready(function() {
 	var svg = d3.select("#chart-svg").append("svg").attr("width", w).attr("height", h).on("mousedown", function() {
 		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))});
 	//.on("mousemove", function() {if (mouseDownOnElement){
-		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))}})
+		//nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))}})
 	//.on("mouseup", function() {
-		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))});
+		//nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this))});
 	svg.append("rect").attr("x", padding*1.5).attr("y", padding-1).attr("width", w - padding*3).attr("height", h - padding*2+1).attr("fill","#F0F0F0");
 	svg.append("g").attr("id", "grapharea");
 	grida=svg.append("g").attr("class", "gridarea");

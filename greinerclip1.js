@@ -207,13 +207,13 @@ function clip_polygon(subject, clipper, operation) {
 		Clipper.add(new Vertex(clipper[k]));}
 	var clipped;
 	if (operation === 'difference') {
-		clipped = Subject.difference(Clipper);
+		clipped = Subject.clip(Clipper, false, true);
 	} else if (operation === 'reversed-diff') {
-		clipped = Clipper.difference(Subject);
+		clipped = Clipper.clip(Subject, false, true);
 	} else if (operation === 'union') {
-		clipped = Subject.union(Clipper);
+		clipped = Subject.clip(Clipper, false, false);
 	} else if (operation === 'intersection') {
-		clipped = Subject.intersection(Clipper);
+		clipped = Subject.clip(Clipper, true, true);
 	}
 	var clippedlist = [];
 	for (k=0;k<clipped.length;k++) {clippedlist.push(clipped[k].points());}

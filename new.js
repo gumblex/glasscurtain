@@ -198,7 +198,7 @@ function PrepareData(walls, pC, pD, lw) {
 	var n = 0;
 	var pA, pB;
 	for (i=0;i<walls.length;i++) {
-		// walls[i] = [pA, pB, Height, n]
+		// walls[i] = [pA, pB, Height,] + n
 		pA = walls[i][0];
 		pB = walls[i][1];
 		pA.x = recx(pO.la,0,pA.la,0);
@@ -227,19 +227,20 @@ function PrepareData(walls, pC, pD, lw) {
 
 function lineGraph(index, range){
 	if (visiblemark[index]){
-	var i = 0, j = 0;
-	var paths = [], newpath = [];
-	for (i=0;i<range.length;i++) {
-		newpath = [];
-		for (j=0;j<range[i].length;j++) {
-			newpath.push(new google.maps.LatLng(range[i][j].x/pi180, range[i][j].y/pi180));
+		var i = 0, j = 0;
+		var paths = [], newpath = [];
+		for (i=0;i<range.length;i++) {
+			newpath = [];
+			for (j=0;j<range[i].length;j++) {
+				newpath.push(new google.maps.LatLng(range[i][j].x/pi180, range[i][j].y/pi180));
+			}
+			paths.push(newpath);
 		}
-		paths.push(newpath);
+		pab1l[index].setOptions({
+			paths: paths,
+			visible: false,
+		});
 	}
-	pab1l[index].setOptions({
-		paths: paths,
-		visible: false,
-	});
 }
 
 function Calc(daynum,time,pAvg,walls,pC,pD,pE,m,Hg,Hp,draw) {

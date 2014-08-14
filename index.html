@@ -259,7 +259,7 @@ var visiblemark = [false];
 var Palette=["#9edae5","#AEFF5C","#FFD34D","#ff7f0e","#e377c2","#d62728"];
 var efname=["无","可接受","轻微影响","有影响","强影响","严重影响"];
 var dearth = 12745594;
-var pi180 = 0.0174532925199;
+var pi180 = 0.017453292519943295;
 var timeoutID = 0;
 var h = 320, w=400;
 var padding = 20;
@@ -838,8 +838,8 @@ function pointinrange(point, range) {
 	return false;
 }
 function Sunriseset(daynum, la, ln){
-	var a=Math.PI*2*(daynum+.5)/365;
-	var phi=0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
+	var a = Math.PI*2*(daynum+.5)/365;
+	var phi = 0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
 	var cosw0 = -Math.tan(la)*Math.tan(phi);
 	if (cosw0 > 1){return []} else if (cosw0 < -1){return [[0,24]]}
 	else {
@@ -908,8 +908,10 @@ function mergeandclip(subject, clippers) {
 	var polygons = [subject], newpoly;
 	var i = 0, j = 0;
 	for (i=0;i<clippers.length;i++) {
+		if (clippers[i].length === 0) {continue}
 		newpoly = [];
 		for (j=0;j<polygons.length;j++) {
+			if (polygons[j].length === 0) {continue}
 			newpoly.concat(clip_polygon(polygons[j], clippers[i], "difference"));
 		}
 		polygons = newpoly;
@@ -918,10 +920,11 @@ function mergeandclip(subject, clippers) {
 }
 function doclips(h0, gindex, walls, object, alpha, mu) {
 	var j = 0;
-	var cl = [clipshadow(h0, walls[gindex], object)]
+	var cl = [clipshadow(h0, walls[gindex], object, alpha, mu)]
 	for (j=0;j<walls.length;j++) {
 		if (j !== gindex) {
-			cl.push(clipshadow(h0, walls[gindex], walls[j], alpha, mu))
+			var cs = clipshadow(h0, walls[gindex], walls[j], alpha, mu);
+			if (cs.length !== 0) {cl.push(cs)}
 			cl.push(cliplight(h0, walls[j], mu))
 		}
 	}
@@ -984,7 +987,7 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,m,Hp,draw) {
 	var localtime = time+(pAvg.ln/pi180-120)/15;
 	var a = Math.PI*2*(daynum+localtime/24)/365;
 	var phi = 0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
-	var h0=Math.asin(Math.cos((localtime-12)*15*pi180)*Math.cos(pAvg.ln)*Math.cos(phi)+Math.sin(pAvg.ln)*Math.sin(phi));
+	var h0 = Math.asin(Math.cos((localtime-12)*15*pi180)*Math.cos(pAvg.la)*Math.cos(phi)+Math.sin(pAvg.la)*Math.sin(phi));
 	if (h0 <= 0) {return -1;}
 	var cosA = (Math.sin(h0)*Math.sin(pAvg.la)-Math.sin(phi))/Math.cos(h0)/Math.cos(pAvg.la);
 	var alpha = Math.acos(cosA);
@@ -1125,9 +1128,6 @@ function _setmarkers(list){
 	//$("#window").slider("value") = list[10];
 }
 function DrawChart(densityx,densityy){
-	/*if (pab1.length!==0){
-	for (k = 0; k < pab1.length; k++){pab1[k].setMap(null);};
-	pab1.length = 0;pab1=[]}*/
 	var startTime=new Date(2014, 0); ///////////////////
 	var EffectData=new Array(6);
 	var walls = [];
@@ -1170,6 +1170,7 @@ function DrawChart(densityx,densityy){
 	var opened = false;
 	var calcrange;
 	i = 0;
+	//console.log(JSON.stringify([pAvg,walls,pC,pD,pE,m,Hp]))
 	while (i < 365) {
 		opened = false;
 		nowtime = [[],[],[],[],[],[]];
@@ -1265,7 +1266,7 @@ function DrawLine(coord,mouse){
 		var pE = CalcPara[4];
 		var m = CalcPara[5];
 		var Hp = CalcPara[6];
-		var val = Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,pAvg,walls,pC,pD,pE,m,Hp,1);
+		var val = Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,pAvg,walls,pC,pD,pE,m,Hp,true);
 		for (var x=0;x<markeral.length;x++){
 			if (val>-1){
 				pab1l[x].setOptions({fillColor: Palette[val], visible: true});
@@ -1592,8 +1593,9 @@ $(document).ready(function() {
 	.on("mousemove", function() {if (mouseDownOnElement){
 		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),true)}})
 	.on("mouseup", function() {
-		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),false)})
-	.on("mouseout", function() {mouseDownOnElement=false});
+		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),false)});
+	// .on("mouseout", function() {
+		// nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),false)});
 	svg.append("rect").attr("x", padding*1.5).attr("y", padding-1).attr("width", w - padding*3).attr("height", h - padding*2+1).attr("fill","#F0F0F0");
 	svg.append("g").attr("id", "grapharea");
 	grida=svg.append("g").attr("class", "gridarea");

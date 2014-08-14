@@ -276,38 +276,6 @@ function zip(arrays) {
 }
 
 
-function DrawLine(coord){
-	if (coord[0]>=padding*1.5 && coord[0]<w-padding*1.5
-		&& coord[1]>padding && coord[1]<=h - padding){
-		//mouseDownOnElement=mouse;
-		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
-		$("#tptext").attr("x", coord[0]+7);
-		$("#tptext").attr("y", coord[1]+10);
-		var nowDate = new Date();
-		var startD = new Date(2014, 0);
-		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))+1));
-		nowDate.setMinutes(xrevScale(coord[0]));
-		$("#tptext").text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
-		if (typeof map === "undefined") {return};
-		cla = markerc.getPosition().lat() * pi180;
-		cln = markerc.getPosition().lng() * pi180;
-		dla = markerd.getPosition().lat() * pi180;
-		dln = markerd.getPosition().lng() * pi180;
-		for (var x=0;x<markeral.length;x++){
-			ala = markeral[x].getPosition().lat() * pi180;
-			aln = markeral[x].getPosition().lng() * pi180;
-			bla = markerbl[x].getPosition().lat() * pi180;
-			bln = markerbl[x].getPosition().lng() * pi180;
-			wallh = gwallh[x];
-			val=Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,ala,aln,bla,bln,cla,cln,dla,dln,wallh*3,$("#planeh").spinner("value")*3,$("#window").slider("value"),x);
-			if (val>-1){
-			pab1l[x].setOptions({fillColor: Palette[val], visible: true})
-			}else{pab1l[x].setOptions({visible: false})}
-		}
-	}
-}
-
-
 // y = Math.tan(-alpha) * (x - x4) + y4;
 // y = Math.tan(-alpha) * (x - x5) + y5;
 // y = (y7 - y6) / (x7 - x6) * (x - x6) + y6;

@@ -236,6 +236,8 @@ footer {
   stroke-width:2;
   stroke-opacity:1
 }
+* {
+-webkit-print-color-adjust:exact}
 </style>
 <script>
 'use strict';
@@ -374,6 +376,7 @@ function initialize() {
 		} else {
 			markera.setPosition(event.latLng);
 			poly.setPath([markera.getPosition(), markerb.getPosition()]);
+			visiblemark[mkindex]=true;
 		}
 	}else{
 		if (!markerc.getVisible()) {
@@ -389,6 +392,7 @@ function initialize() {
 		} else {
 			markerc.setPosition(event.latLng);
 			polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
+			visiblemark[mkindex]=true;
 		}
 	}
 	});
@@ -589,8 +593,8 @@ function codeAddress() {
 function Vertex(vertex) {
 	// Node in a circular doubly linked list.
 	var self = this;
-	self.x = vertex.x;
-	self.y = vertex.y;
+	self.la = vertex.la;
+	self.ln = vertex.ln;
 	self.next = null;
 	self.prev = null;
 	self.neighbour = null;
@@ -603,7 +607,7 @@ Vertex.prototype.isInside = function (poly) {
 	// Test if a vertex lies inside a polygon (odd-even rule).
 	var self = this;
 	var winding_number = 0;
-	var infinity = new Vertex({x: 1000000, y: self.y});
+	var infinity = new Vertex({la: 1000000, ln: self.ln});
 	var polyiter = poly.iter(), q, kq = 0;
 	for (kq=0;kq<polyiter.length;kq++) {
 		q = polyiter[kq];
@@ -663,7 +667,7 @@ Polygon.prototype.points = function () {
 	var selfiter = this.iter(), v, kv = 0;
 	for (kv=0;kv<selfiter.length;kv++) {
 		v = selfiter[kv];
-		p.push({x: v.x, y: v.y});
+		p.push({la: v.la, ln: v.ln});
 	}
 	return p;
 };
@@ -763,17 +767,17 @@ Polygon.prototype.iter = function () {
 	}
 };
 function intersect(s1, s2, c1, c2) {
-	var den = (c2.y - c1.y) * (s2.x - s1.x) - (c2.x - c1.x) * (s2.y - s1.y);
+	var den = (c2.ln - c1.ln) * (s2.la - s1.la) - (c2.la - c1.la) * (s2.ln - s1.ln);
 	if (!den) {return;}
-	var us = ((c2.x - c1.x) * (s1.y - c1.y) - (c2.y - c1.y) * (s1.x - c1.x)) / den;
-	var uc = ((s2.x - s1.x) * (s1.y - c1.y) - (s2.y - s1.y) * (s1.x - c1.x)) / den;
+	var us = ((c2.la - c1.la) * (s1.ln - c1.ln) - (c2.ln - c1.ln) * (s1.la - c1.la)) / den;
+	var uc = ((s2.la - s1.la) * (s1.ln - c1.ln) - (s2.ln - s1.ln) * (s1.la - c1.la)) / den;
 	if (((us === 0 || us === 1) && (0 <= uc && uc <= 1)) ||
 	   ((uc === 0 || uc === 1) && (0 <= us && us <= 1))) {
 		return;
 	} else if ((0 < us && us < 1) && (0 < uc && uc < 1)) {
-		var x = s1.x + us * (s2.x - s1.x);
-		var y = s1.y + us * (s2.y - s1.y);
-		return [{x: x, y: y}, us, uc];
+		var la = s1.la + us * (s2.la - s1.la);
+		var ln = s1.ln + us * (s2.ln - s1.ln);
+		return [{la: la, ln: ln}, us, uc];
 	}
 	return;
 }
@@ -820,15 +824,15 @@ function distb() {
 	}else{$("#distanceb").css("color","#175086")};
 	return Math.round(s);
 }
-function pointInPolygon(x,y,poly) {
+function pointInPolygon(la,ln,poly) {
 	var polySides = poly.length;
 	var i = 0, j = polySides-1;
 	var oddNodes = false;
 	for (i=0; i<polySides; i++) {
-		if ((poly[i].y< y && poly[j].y>=y
-		   ||poly[j].y< y && poly[i].y>=y)
-		   &&(poly[i].x<=x || poly[j].x<=x)) {
-			if (poly[i].x+(y-poly[i].y)/(poly[j].y-poly[i].y)*(poly[j].x-poly[i].x)<x) {oddNodes=!oddNodes}
+		if ((poly[i].ln< ln && poly[j].ln>=ln
+		   ||poly[j].ln< ln && poly[i].ln>=ln)
+		   &&(poly[i].la<=la || poly[j].la<=la)) {
+			if (poly[i].la+(ln-poly[i].ln)/(poly[j].ln-poly[i].ln)*(poly[j].la-poly[i].la)<la) {oddNodes=!oddNodes}
 		}
 		j = i;
 	}
@@ -837,7 +841,7 @@ function pointInPolygon(x,y,poly) {
 function pointinrange(point, range) {
 	for (var i=0;i<range.length;i++) {
 		// xyarray = zip(range[i])
-		if (pointInPolygon(point.x,point.y,range[i])) {
+		if (pointInPolygon(point.la,point.ln,range[i])) {
 			return true;}
 	}
 	return false;
@@ -861,30 +865,52 @@ function clipshadow(h0, subject, object, alpha, mu) {
 	// require {la, ln, x, y}
 	var pA = subject[0];
 	var pB = subject[1];
+	var n = subject[2];
 	var pE = object[0];
 	var pF = object[1];
 	var H = object[2];
+	if (pA.la === pE.la) {
+		var thetaea = Math.PI/2;
+		if (pA.ln < pE.ln) {thetaea = -thetaea} else {return []}
+	} else {
+		var thetaea = Math.atan((pA.ln-pE.ln)/(pA.la-pE.la));
+		if (pA.la < pE.la) {thetaea = Math.PI - thetaea}
+	}
+	if (pA.la === pF.la) {
+		var thetafa = Math.PI/2;
+		if (pA.ln < pF.ln) {thetafa = -thetafa} else {return []}
+	} else {
+		var thetafa = Math.atan((pA.ln-pF.ln)/(pA.la-pF.la));
+		if (pA.la < pF.la) {thetaea = Math.PI - thetafa}
+	}
+	if (Math.sin(thetaea-n) > 0 && Math.sin(thetafa-n) > 0) {return []}
 	var pG = {
-		x: (pA.y - pE.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pE.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)),
-		y: Math.tan(-alpha) * (pA.y - pE.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pE.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)) + pE.y};
+		la: (pA.ln - pE.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pE.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)),
+		ln: Math.tan(-alpha) * ((pA.ln - pE.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pE.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)) - pE.la) + pE.ln};
 	var pH = {
-		x: (pA.y - pF.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pF.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)),
-		y: (Math.tan(-alpha) * (pA.y - pF.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pF.x)) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)) + pF.y};
-	if ((pG.x < pA.x || pG.x > pB.x) && (pH.x < pA.x || pH.x > pB.x))
+		la: (pA.ln - pF.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pF.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)),
+		ln: Math.tan(-alpha) * ((pA.ln - pF.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pF.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)) - pF.la) + pF.ln};
+	if ((pG.la < pA.la || pG.la > pB.la) && (pH.la < pA.la || pH.la > pB.la))
 		{return []}
 
-	var d1 = Math.sqrt(Math.pow(pE.x - pG.x, 2) + Math.pow(pE.y - pG.y, 2));
-	var d2 = Math.sqrt(Math.pow(pF.x - pH.x, 2) + Math.pow(pF.y - pH.y, 2));
+	//var d1 = Math.sqrt(Math.pow(pE.x - pG.x, 2) + Math.pow(pE.y - pG.y, 2));
+	//var d2 = Math.sqrt(Math.pow(pF.x - pH.x, 2) + Math.pow(pF.y - pH.y, 2));
+	var d1 = walllength(pE,pG);
+	var d2 = walllength(pF,pH);
 	var L1 = H / Math.tan(h0);
 	var Hmax1 = Math.tan(h0) * (L1 - d1);
 	var Hmax2 = Math.tan(h0) * (L1 - d2);
 	if (Hmax1 < 0 && Hmax2 < 0) {return []}
-	var L2 = Hmax1 / Math.tan(h0);
-	var L3 = Hmax2 / Math.tan(h0);
-	var pI = {x: L2*Math.cos(Math.PI - mu) + pG.x,
-	          y: L2*Math.sin(Math.PI - mu) + pG.y};
-	var pJ = {x: L3*Math.cos(Math.PI - mu) + pH.x,
-	          y: L3*Math.sin(Math.PI - mu) + pH.y};
+	var L2 = L1 - d1;
+	var L3 = L1 - d2;
+	//pG.la = pE.la - (d1 * Math.cos(Math.PI - alpha)) * 2 / dearth;
+	//pG.ln = pE.ln + (d1 * Math.sin(Math.PI - alpha)) * 2 / dearth;
+	//pH.la = pF.la - (d2 * Math.cos(Math.PI - alpha)) * 2 / dearth;
+	//pH.ln = pF.ln + (d2 * Math.sin(Math.PI - alpha)) * 2 / dearth;
+	var pI = {la: pG.la - (L2 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pG.ln + (L2 * Math.sin(Math.PI - mu)) * 2 / dearth};
+	var pJ = {la: pH.la - (L3 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pH.ln + (L3 * Math.sin(Math.PI - mu)) * 2 / dearth};
 	// [[pA.la,pA.ln],[pA2.la,pA2.ln],[pB2.la,pB2.ln],[pB.la,pB.ln]]
 	if (Hmax1 > 0 && Hmax2 > 0) {
 		return [pG,pH,pJ,pI];
@@ -899,10 +925,10 @@ function cliplight(h0, object, mu) {
 	var pL = object[1];
 	var H = object[2];
 	var L4 = H / Math.tan(h0);
-	var pM = {x: L4*Math.cos(Math.PI - mu) + pK.x,
-	          y: L4*Math.sin(Math.PI - mu) + pK.y};
-	var pN = {x: L4*Math.cos(Math.PI - mu) + pL.x,
-	          y: L4*Math.sin(Math.PI - mu) + pL.y};
+	var pM = {la: pK.la - (L4 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pK.ln + (L4 * Math.sin(Math.PI - mu)) * 2 / dearth};
+	var pN = {la: pL.la - (L4 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pL.ln + (L4 * Math.sin(Math.PI - mu)) * 2 / dearth};
 	return [pK,pL,pN,pM];
 }
 function mergeandclip(subject, clippers) {
@@ -933,18 +959,16 @@ function doclips(h0, gindex, walls, object, alpha, mu) {
 		}
 	}
 	var origpoly = [walls[gindex][0],
-	 {x: walls[gindex][0].x + walls[gindex][2]*Math.cos(Math.PI-mu),
-	  y: walls[gindex][0].y + walls[gindex][2]*Math.sin(Math.PI-mu)},
-	 {x: walls[gindex][1].x + walls[gindex][2]*Math.cos(Math.PI-mu),
-	  y: walls[gindex][1].y + walls[gindex][2]*Math.sin(Math.PI-mu)},
+	 {la: walls[gindex][0].la-(walls[gindex][2]*Math.cos(Math.PI-mu)*2/dearth),
+	  ln: walls[gindex][0].ln+(walls[gindex][2]*Math.sin(Math.PI-mu)*2/dearth)},
+	 {la: walls[gindex][1].la-(walls[gindex][2]*Math.cos(Math.PI-mu)*2/dearth),
+	  ln: walls[gindex][1].ln+(walls[gindex][2]*Math.sin(Math.PI-mu)*2/dearth)},
 	 walls[gindex][1]];
 	if (cl.length === 0) {return [origpoly]}
 	else {return mergeandclip(origpoly, cl)}
 }
 function recx(la0,_ln0,lax,_lnx) {return dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(lax)-Math.sin(la0),2)+Math.pow(Math.cos(lax)-Math.cos(la0),2))/2)}
 function recy(_la0,ln0,lax,lnx) {return dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(lax)-Math.cos(lax)*Math.cos(Math.abs(ln0-lnx)),2)+Math.pow(Math.cos(lax)*Math.sin(Math.abs(ln0-lnx)),2))/2)}
-function polx(la0,x) {return la0-x*2/dearth}
-function poly(ln0,y) {return ln0+y*2/dearth}
 function PrepareData() {
 	var i = 0;
 	var walls = [];
@@ -1000,7 +1024,9 @@ function PrepareData() {
 	}
 	if (pC.la < pD.la) {m = Math.PI-m}
 	if (pC.ln < pD.ln) {m = -m}
-	var pE = {x: (pD.x*lw+pC.x*(100-lw))/100, y: (pD.y*lw+pC.y*(100-lw))/100};
+	// var pE = {x: (pD.x*lw+pC.x*(100-lw))/100, y: (pD.y*lw+pC.y*(100-lw))/100};
+	var pE = {la: (pD.la*lw+pC.la*(100-lw))/100,
+	          ln: (pD.ln*lw+pC.ln*(100-lw))/100};
 	return [pAvg, walls, pC, pD, pE, pO, m, Hp];
 }
 function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
@@ -1021,20 +1047,25 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
 		n = walls[i][3];
 		// 阳光照在背面
 		// if (Math.sin(alpha-n)>0) {if(draw !== -1) {return -2} else {return 0};}
+		
 		if (Math.sin(alpha-n)>0) {
 			if (draw) {pab1l[i].set('invisible', true)}
 			continue;
-		} else if (draw) {pab1l[i].set('invisible', false)}
+		}
 		mu = 2*n-alpha;
+		if (!draw) {if (Math.sin(mu-m)>0) {continue}}
 		// 反射光照在背面
-		if (Math.sin(mu-m)>0) {continue}
 		lightrange = doclips(h0, i, walls, [pC, pD, Hp], alpha, mu);
 		// console.log(JSON.stringify(lightrange));
-		if (draw) {lineGraph(pO, i, lightrange);}
+		if (draw) {
+			pab1l[i].set('invisible', false);
+			lineGraph(pO, i, lightrange);
+			if (Math.sin(mu-m)>0) {continue}
+		}
 		if (pA.ln>pD.ln) {pD.y=-pD.y}; if (pA.la<pD.la) {pD.x=-pD.x};
-		pF = {x: (pE.y-Math.tan(Math.PI-mu))/(pB.y/pB.x-Math.tan(Math.PI-mu)),
-			  y: (pE.y-Math.tan(Math.PI-mu))*pB.y/((pB.y/pB.x-Math.tan(Math.PI-mu))*pB.x)};
-		d = Math.sqrt(Math.pow(pE.x-pF.x,2)+Math.pow(pE.y-pF.y,2));
+		pF = {la: (pE.ln-Math.tan(Math.PI-mu))/(pB.ln/pB.la-Math.tan(Math.PI-mu)),
+		      ln: (pE.ln-Math.tan(Math.PI-mu))*pB.ln/((pB.ln/pB.la-Math.tan(Math.PI-mu))*pB.la)};
+		d = walllength(pE, pF);
 		hmax = Math.tan(h0)*(L-d);
 		// 照不到高度
 		if (hmax<Hp) {continue};
@@ -1115,6 +1146,15 @@ function AutoRedraw(){
 	//timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
 	};
 };
+function _newmarker(p,t){
+	var a = new google.maps.Marker({
+		position: new google.maps.LatLng(p.la/pi180, p.ln/pi180),
+		map: map,
+		title: t,
+		visible: true,
+		draggable: false
+	});
+}
 function _getmarkers(){
 	return [markera.getPosition().lat(),
 	markera.getPosition().lng(),
@@ -1544,17 +1584,20 @@ $(document).ready(function() {
 			if (ui.value > 90) {return false}
 			else if (ui.value < 2) {return false}
 			gwallh[mkindex] = ui.value;
+			DrawLine(nowcoord);
 			AutoRedraw();},
 		change: function(event, ui) {
 			gwallh[mkindex] = $("#wallh").spinner("value");
+			DrawLine(nowcoord);
 			AutoRedraw();}
 	});
 	$("#planeh").spinner({
 		spin: function(event, ui) {
 			if (ui.value > 60) {return false}
 			else if (ui.value < 1) {return false}
+			DrawLine(nowcoord);
 			AutoRedraw();},
-		change: function(event, ui) {AutoRedraw()}
+		change: function(event, ui) {DrawLine(nowcoord);AutoRedraw()}
 	});
 	$("#window").slider({
 		orientation: "horizontal",

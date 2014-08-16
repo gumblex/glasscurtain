@@ -63,8 +63,8 @@ function Vertex(vertex) {
 function Vertex(vertex) {
 	// Node in a circular doubly linked list.
 	var self = this;
-	self.x = vertex.x;
-	self.y = vertex.y;
+	self.la = vertex.la;
+	self.ln = vertex.ln;
 	self.next = null;
 	self.prev = null;
 	self.neighbour = null;
@@ -77,7 +77,7 @@ Vertex.prototype.isInside = function (poly) {
 	// Test if a vertex lies inside a polygon (odd-even rule).
 	var self = this;
 	var winding_number = 0;
-	var infinity = new Vertex({x: 1000000, y: self.y});
+	var infinity = new Vertex({la: 1000000, ln: self.ln});
 	var polyiter = poly.iter(), q, kq = 0;
 	for (kq=0;kq<polyiter.length;kq++) {
 		q = polyiter[kq];
@@ -137,7 +137,7 @@ Polygon.prototype.points = function () {
 	var selfiter = this.iter(), v, kv = 0;
 	for (kv=0;kv<selfiter.length;kv++) {
 		v = selfiter[kv];
-		p.push({x: v.x, y: v.y});
+		p.push({la: v.la, ln: v.ln});
 	}
 	return p;
 };
@@ -237,17 +237,17 @@ Polygon.prototype.iter = function () {
 	}
 };
 function intersect(s1, s2, c1, c2) {
-	var den = (c2.y - c1.y) * (s2.x - s1.x) - (c2.x - c1.x) * (s2.y - s1.y);
+	var den = (c2.ln - c1.ln) * (s2.la - s1.la) - (c2.la - c1.la) * (s2.ln - s1.ln);
 	if (!den) {return;}
-	var us = ((c2.x - c1.x) * (s1.y - c1.y) - (c2.y - c1.y) * (s1.x - c1.x)) / den;
-	var uc = ((s2.x - s1.x) * (s1.y - c1.y) - (s2.y - s1.y) * (s1.x - c1.x)) / den;
+	var us = ((c2.la - c1.la) * (s1.ln - c1.ln) - (c2.ln - c1.ln) * (s1.la - c1.la)) / den;
+	var uc = ((s2.la - s1.la) * (s1.ln - c1.ln) - (s2.ln - s1.ln) * (s1.la - c1.la)) / den;
 	if (((us === 0 || us === 1) && (0 <= uc && uc <= 1)) ||
 	   ((uc === 0 || uc === 1) && (0 <= us && us <= 1))) {
 		return;
 	} else if ((0 < us && us < 1) && (0 < uc && uc < 1)) {
-		var x = s1.x + us * (s2.x - s1.x);
-		var y = s1.y + us * (s2.y - s1.y);
-		return [{x: x, y: y}, us, uc];
+		var la = s1.la + us * (s2.la - s1.la);
+		var ln = s1.ln + us * (s2.ln - s1.ln);
+		return [{la: la, ln: ln}, us, uc];
 	}
 	return;
 }
@@ -287,6 +287,10 @@ function zip(arrays) {
 		return arrays.map(function(array){return array[i]})
 	});
 }
+function walllength(pA, pB) {
+	var k = Math.sqrt(Math.pow(Math.sin(pB.la) - Math.sin(pA.la), 2) + Math.pow(Math.cos(pB.la) - Math.cos(pA.la) * Math.cos(Math.abs(pA.ln - pB.ln)), 2) + Math.pow(Math.cos(pA.la) * Math.sin(Math.abs(pA.ln - pB.ln)), 2));
+	return dearth * Math.asin(k / 2);
+}
 
 
 // y = Math.tan(-alpha) * (x - x4) + y4;
@@ -304,26 +308,32 @@ function clipshadow(h0, subject, object, alpha, mu) {
 	var pF = object[1];
 	var H = object[2];
 	var pG = {
-		x: (pA.y - pE.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pE.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)),
-		y: Math.tan(-alpha) * (pA.y - pE.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pE.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)) + pE.y};
+		la: (pA.ln - pE.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pE.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)),
+		ln: Math.tan(-alpha) * ((pA.ln - pE.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pE.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)) - pE.la) + pE.ln};
 	var pH = {
-		x: (pA.y - pF.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pF.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)),
-		y: (Math.tan(-alpha) * (pA.y - pF.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pF.x)) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)) + pF.y};
-	if ((pG.x < pA.x || pG.x > pB.x) && (pH.x < pA.x || pH.x > pB.x))
+		la: (pA.ln - pF.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pF.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)),
+		ln: Math.tan(-alpha) * ((pA.ln - pF.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pF.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)) - pF.la) + pF.ln};
+	if ((pG.la < pA.la || pG.la > pB.la) && (pH.la < pA.la || pH.la > pB.la))
 		{return []}
 
-	var d1 = Math.sqrt(Math.pow(pE.x - pG.x, 2) + Math.pow(pE.y - pG.y, 2));
-	var d2 = Math.sqrt(Math.pow(pF.x - pH.x, 2) + Math.pow(pF.y - pH.y, 2));
+	//var d1 = Math.sqrt(Math.pow(pE.x - pG.x, 2) + Math.pow(pE.y - pG.y, 2));
+	//var d2 = Math.sqrt(Math.pow(pF.x - pH.x, 2) + Math.pow(pF.y - pH.y, 2));
+	var d1 = walllength(pE,pG);
+	var d2 = walllength(pF,pH);
 	var L1 = H / Math.tan(h0);
 	var Hmax1 = Math.tan(h0) * (L1 - d1);
 	var Hmax2 = Math.tan(h0) * (L1 - d2);
 	if (Hmax1 < 0 && Hmax2 < 0) {return []}
-	var L2 = Hmax1 / Math.tan(h0);
-	var L3 = Hmax2 / Math.tan(h0);
-	var pI = {x: L2*Math.cos(Math.PI - mu) + pG.x,
-	          y: L2*Math.sin(Math.PI - mu) + pG.y};
-	var pJ = {x: L3*Math.cos(Math.PI - mu) + pH.x,
-	          y: L3*Math.sin(Math.PI - mu) + pH.y};
+	var L2 = L1 - d1;
+	var L3 = L1 - d2;
+	//pG.la = pE.la - (d1 * Math.cos(Math.PI - alpha)) * 2 / dearth;
+	//pG.ln = pE.ln + (d1 * Math.sin(Math.PI - alpha)) * 2 / dearth;
+	//pH.la = pF.la - (d2 * Math.cos(Math.PI - alpha)) * 2 / dearth;
+	//pH.ln = pF.ln + (d2 * Math.sin(Math.PI - alpha)) * 2 / dearth;
+	var pI = {la: pG.la - (L2 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pG.ln + (L2 * Math.sin(Math.PI - mu)) * 2 / dearth};
+	var pJ = {la: pH.la - (L3 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pH.ln + (L3 * Math.sin(Math.PI - mu)) * 2 / dearth};
 	// [[pA.la,pA.ln],[pA2.la,pA2.ln],[pB2.la,pB2.ln],[pB.la,pB.ln]]
 	if (Hmax1 > 0 && Hmax2 > 0) {
 		return [pG,pH,pJ,pI];
@@ -338,10 +348,10 @@ function cliplight(h0, object, mu) {
 	var pL = object[1];
 	var H = object[2];
 	var L4 = H / Math.tan(h0);
-	var pM = {x: L4*Math.cos(Math.PI - mu) + pK.x,
-	          y: L4*Math.sin(Math.PI - mu) + pK.y};
-	var pN = {x: L4*Math.cos(Math.PI - mu) + pL.x,
-	          y: L4*Math.sin(Math.PI - mu) + pL.y};
+	var pM = {la: pK.la - (L4 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pK.ln + (L4 * Math.sin(Math.PI - mu)) * 2 / dearth};
+	var pN = {la: pL.la - (L4 * Math.cos(Math.PI - mu)) * 2 / dearth,
+	          ln: pL.ln + (L4 * Math.sin(Math.PI - mu)) * 2 / dearth};
 	return [pK,pL,pN,pM];
 }
 function mergeandclip(subject, clippers) {
@@ -357,6 +367,7 @@ function mergeandclip(subject, clippers) {
 		}
 		polygons = newpoly;
 	}
+	print(JSON.stringify(polygons));
 	return polygons;
 }
 function doclips(h0, gindex, walls, object, alpha, mu) {
@@ -372,23 +383,23 @@ function doclips(h0, gindex, walls, object, alpha, mu) {
 		}
 	}
 	var origpoly = [walls[gindex][0],
-	 {x: walls[gindex][0].x + walls[gindex][2]*Math.cos(Math.PI-mu),
-	  y: walls[gindex][0].y + walls[gindex][2]*Math.sin(Math.PI-mu)},
-	 {x: walls[gindex][1].x + walls[gindex][2]*Math.cos(Math.PI-mu),
-	  y: walls[gindex][1].y + walls[gindex][2]*Math.sin(Math.PI-mu)},
+	 {la: walls[gindex][0].la-(walls[gindex][2]*Math.cos(Math.PI-mu)*2/dearth),
+	  ln: walls[gindex][0].ln+(walls[gindex][2]*Math.sin(Math.PI-mu)*2/dearth)},
+	 {la: walls[gindex][1].la-(walls[gindex][2]*Math.cos(Math.PI-mu)*2/dearth),
+	  ln: walls[gindex][1].ln+(walls[gindex][2]*Math.sin(Math.PI-mu)*2/dearth)},
 	 walls[gindex][1]];
 	if (cl.length === 0) {return [origpoly]}
 	else {return mergeandclip(origpoly, cl)}
 }
-function pointInPolygon(x,y,poly) {
+function pointInPolygon(la,ln,poly) {
 	var polySides = poly.length;
 	var i = 0, j = polySides-1;
 	var oddNodes = false;
 	for (i=0; i<polySides; i++) {
-		if ((poly[i].y< y && poly[j].y>=y
-		   ||poly[j].y< y && poly[i].y>=y)
-		   &&(poly[i].x<=x || poly[j].x<=x)) {
-			if (poly[i].x+(y-poly[i].y)/(poly[j].y-poly[i].y)*(poly[j].x-poly[i].x)<x) {oddNodes=!oddNodes}
+		if ((poly[i].ln< ln && poly[j].ln>=ln
+		   ||poly[j].ln< ln && poly[i].ln>=ln)
+		   &&(poly[i].la<=la || poly[j].la<=la)) {
+			if (poly[i].la+(ln-poly[i].ln)/(poly[j].ln-poly[i].ln)*(poly[j].la-poly[i].la)<la) {oddNodes=!oddNodes}
 		}
 		j = i;
 	}
@@ -459,7 +470,8 @@ function PrepareData() {
 	}
 	if (pC.la < pD.la) {m = Math.PI-m}
 	if (pC.ln < pD.ln) {m = -m}
-	var pE = {x: (pD.x*lw+pC.x*(100-lw))/100, y: (pD.y*lw+pC.y*(100-lw))/100};
+	var pE = {la: (pD.la*lw+pC.la*(100-lw))/100,
+	          ln: (pD.ln*lw+pC.ln*(100-lw))/100};
 	return [pAvg, walls, pC, pD, pE, pO, m, Hp];
 }
 function lineGraph(pO, index, range){
@@ -502,24 +514,30 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
 		n = walls[i][3];
 		// 阳光照在背面
 		// if (Math.sin(alpha-n)>0) {if(draw !== -1) {return -2} else {return 0};}
+		
 		if (Math.sin(alpha-n)>0) {
 			if (draw) {pab1l[i].set('invisible', true)}
+			print('die at Math.sin(alpha-n)>0');
 			continue;
-		} else if (draw) {pab1l[i].set('invisible', false)}
-		mu = 2*n-alpha;
+		}
 		// 反射光照在背面
-		if (Math.sin(mu-m)>0) {continue}
+		mu = 2*n-alpha;
+		if (!draw) {if (Math.sin(mu-m)>0) {print('die at Math.sin(mu-m)>0');continue}}
 		lightrange = doclips(h0, i, walls, [pC, pD, Hp], alpha, mu);
-		// console.log(JSON.stringify(lightrange));
-		if (draw) {lineGraph(pO, i, lightrange);}
+		//print(JSON.stringify(lightrange));
+		if (draw) {
+			pab1l[i].set('invisible', false);
+			lineGraph(pO, i, lightrange);
+			if (Math.sin(mu-m)>0) {continue}
+		}
 		if (pA.ln>pD.ln) {pD.y=-pD.y}; if (pA.la<pD.la) {pD.x=-pD.x};
-		pF = {x: (pE.y-Math.tan(Math.PI-mu))/(pB.y/pB.x-Math.tan(Math.PI-mu)),
-			  y: (pE.y-Math.tan(Math.PI-mu))*pB.y/((pB.y/pB.x-Math.tan(Math.PI-mu))*pB.x)};
-		d = Math.sqrt(Math.pow(pE.x-pF.x,2)+Math.pow(pE.y-pF.y,2));
+		pF = {la: (pE.ln-Math.tan(Math.PI-mu))/(pB.ln/pB.la-Math.tan(Math.PI-mu)),
+		      ln: (pE.ln-Math.tan(Math.PI-mu))*pB.ln/((pB.ln/pB.la-Math.tan(Math.PI-mu))*pB.la)};
+		d = walllength(pE, pF);
 		hmax = Math.tan(h0)*(L-d);
 		// 照不到高度
-		if (hmax<Hp) {continue};
-		if (!pointinrange(pE, lightrange)) {continue};
+		if (hmax<Hp) {print('hmax<Hp');continue};
+		if (!pointinrange(pE, lightrange)) {print('die at pip:',JSON.stringify(pE),JSON.stringify(lightrange));continue};
 
 		gamma = -Math.PI/2+m-2*n+alpha;
 		lambda = Math.acos(Math.abs(Math.cos(gamma)*Math.cos(h0)));
@@ -553,7 +571,7 @@ for (i=0;i<365;i+=5) {
 	}
 }*/
 
-var CalcPara = [{la:0.5452671771159049,ln:2.1197783090694484},[[{la:0.5452673722373729,ln:2.119778139370952,x:0,y:0},{la:0.5452666317764217,ln:2.1197776946438553,x:4.7188073286658225,y:-2.423171877527744},60,0.4743998832431577],[{la:0.5452672021315084,ln:2.119778900088353,x:1.0840501425757172,y:4.144897825729492},{la:0.5452675023183167,ln:2.1197785021746354,x:-0.8289794479068952,y:1.9767970643492023},60,2.2937756798859357]],{la:0.5452664516642476,ln:2.119778935198387,x:5.866625651150048,y:4.3362027768447415},{la:0.5452668819321853,ln:2.1197788766816634,x:3.1246154283388043,y:4.017363287180173},{x:4.495620539744426,y:4.176783032012457},{la:0.5452673722373729,ln:2.119778139370952},3.025833435119097,18];
+var CalcPara = [{la:0.5451561292589383,ln:2.1196476880399873},[[{la:0.5451519063426971,ln:2.119644569098642,x:0,y:0},{la:0.5451573100747598,ln:2.1196475651548687,x:-34.43688747800468,y:16.32560879674119},60,-2.698900060621317],[{la:0.545157690336719,ln:2.1196501632973774,x:-36.86021975060163,y:30.482965643321073},{la:0.5451576102815774,ln:2.119648454609061,x:-36.35004458521584,y:21.172270052390783},60,1.5160565471943037]],{la:0.5451540278099882,ln:2.1196491099963604,x:-13.519680388541083,y:24.74355008465445},{la:0.5451553487222061,ln:2.119649344063253,x:-21.93758580766993,y:26.018969966558025},{la:0.5451546882660971,ln:2.1196492270298064},{la:0.5451519063426971,ln:2.119644569098642},-2.991221225676089,57];
 var pAvg = CalcPara[0];
 var walls = CalcPara[1];
 var pC = CalcPara[2];
@@ -579,9 +597,9 @@ var daynum = 123, time = 10;
 		var val = Calc(daynum,time/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
 		if (val!==-1){print(daynum,time,val)};
 }}*/
-for (time=327;time<341;time++) {
+for (time=900;time<1000;time++) {
 //print(JSON.stringify([pAvg,walls,pC,pD,pE,pO,m,Hp]));
-print(Calc(110,time/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false))
+print(Calc(126,time/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false))
 }
 /*
 110 328 1

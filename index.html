@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
@@ -238,6 +238,7 @@ footer {
 }
 </style>
 <script>
+'use strict';
 var map;
 var markeral = [];
 var markerbl = [];
@@ -588,8 +589,8 @@ function codeAddress() {
 function Vertex(vertex) {
 	// Node in a circular doubly linked list.
 	var self = this;
-	self.la = vertex.la;
-	self.ln = vertex.ln;
+	self.x = vertex.x;
+	self.y = vertex.y;
 	self.next = null;
 	self.prev = null;
 	self.neighbour = null;
@@ -602,7 +603,7 @@ Vertex.prototype.isInside = function (poly) {
 	// Test if a vertex lies inside a polygon (odd-even rule).
 	var self = this;
 	var winding_number = 0;
-	var infinity = new Vertex({la: 1000000, ln: self.ln});
+	var infinity = new Vertex({x: 1000000, y: self.y});
 	var polyiter = poly.iter(), q, kq = 0;
 	for (kq=0;kq<polyiter.length;kq++) {
 		q = polyiter[kq];
@@ -662,7 +663,7 @@ Polygon.prototype.points = function () {
 	var selfiter = this.iter(), v, kv = 0;
 	for (kv=0;kv<selfiter.length;kv++) {
 		v = selfiter[kv];
-		p.push({la: v.la, ln: v.ln});
+		p.push({x: v.x, y: v.y});
 	}
 	return p;
 };
@@ -762,17 +763,17 @@ Polygon.prototype.iter = function () {
 	}
 };
 function intersect(s1, s2, c1, c2) {
-	var den = (c2.ln - c1.ln) * (s2.la - s1.la) - (c2.la - c1.la) * (s2.ln - s1.ln);
+	var den = (c2.y - c1.y) * (s2.x - s1.x) - (c2.x - c1.x) * (s2.y - s1.y);
 	if (!den) {return;}
-	var us = ((c2.la - c1.la) * (s1.ln - c1.ln) - (c2.ln - c1.ln) * (s1.la - c1.la)) / den;
-	var uc = ((s2.la - s1.la) * (s1.ln - c1.ln) - (s2.ln - s1.ln) * (s1.la - c1.la)) / den;
+	var us = ((c2.x - c1.x) * (s1.y - c1.y) - (c2.y - c1.y) * (s1.x - c1.x)) / den;
+	var uc = ((s2.x - s1.x) * (s1.y - c1.y) - (s2.y - s1.y) * (s1.x - c1.x)) / den;
 	if (((us === 0 || us === 1) && (0 <= uc && uc <= 1)) ||
 	   ((uc === 0 || uc === 1) && (0 <= us && us <= 1))) {
 		return;
 	} else if ((0 < us && us < 1) && (0 < uc && uc < 1)) {
-		var la = s1.la + us * (s2.la - s1.la);
-		var ln = s1.ln + us * (s2.ln - s1.ln);
-		return [{la: la, ln: ln}, us, uc];
+		var x = s1.x + us * (s2.x - s1.x);
+		var y = s1.y + us * (s2.y - s1.y);
+		return [{x: x, y: y}, us, uc];
 	}
 	return;
 }
@@ -820,15 +821,17 @@ function distb() {
 	return Math.round(s);
 }
 function pointInPolygon(x,y,poly) {
-	var polySides=4;
-	var i, j=polySides-1;
-	var oddNodes=false;
+	var polySides = poly.length;
+	var i = 0, j = polySides-1;
+	var oddNodes = false;
 	for (i=0; i<polySides; i++) {
-    if ((poly[i].y< y && poly[j].y>=y
-    ||   poly[j].y< y && poly[i].y>=y)
-    &&  (poly[i].x<=x || poly[j].x<=x)) {
-	  if (poly[i].x+(y-poly[i].y)/(poly[j].y-poly[i].y)*(poly[j].x-poly[i].x)<x) {oddNodes=!oddNodes; }}
-	j=i; }
+		if ((poly[i].y< y && poly[j].y>=y
+		   ||poly[j].y< y && poly[i].y>=y)
+		   &&(poly[i].x<=x || poly[j].x<=x)) {
+			if (poly[i].x+(y-poly[i].y)/(poly[j].y-poly[i].y)*(poly[j].x-poly[i].x)<x) {oddNodes=!oddNodes}
+		}
+		j = i;
+	}
 	return oddNodes;
 }
 function pointinrange(point, range) {
@@ -845,13 +848,13 @@ function Sunriseset(daynum, la, ln){
 	var cosw0 = -Math.tan(la)*Math.tan(phi);
 	if (cosw0 > 1){return []} else if (cosw0 < -1){return [[0,24]]}
 	else {
-		w0 = Math.acos(cosw0);
-		lt1 = -w0/pi180/15+12;
-		lt2 = w0/pi180/15+12;
-		t1 = (lt1-(ln/pi180-120)/15+24)%24;
-		t2 = (lt2-(ln/pi180-120)/15+24)%24;
-		if (t1<t2){return [[t1,t2]]}
-		else{return [[0,t2],[t1,24]]}
+		var w0 = Math.acos(cosw0);
+		var lt1 = -w0/pi180/15+12;
+		var lt2 = w0/pi180/15+12;
+		var t1 = (lt1-(ln/pi180-120)/15+24)%24;
+		var t2 = (lt2-(ln/pi180-120)/15+24)%24;
+		if (t1<t2) {return [[t1,t2]]}
+		else {return [[0,t2],[t1,24]]}
 	}
 }
 function clipshadow(h0, subject, object, alpha, mu) {
@@ -868,24 +871,20 @@ function clipshadow(h0, subject, object, alpha, mu) {
 		x: (pA.y - pF.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pF.x) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)),
 		y: (Math.tan(-alpha) * (pA.y - pF.y - (pA.x * (pB.y - pA.y) / (pB.x - pA.x)) + Math.tan(-alpha) * pF.x)) / (Math.tan(-alpha) - (pB.y - pA.y) / (pB.x - pA.x)) + pF.y};
 	if ((pG.x < pA.x || pG.x > pB.x) && (pH.x < pA.x || pH.x > pB.x))
-		{return [];}
+		{return []}
 
 	var d1 = Math.sqrt(Math.pow(pE.x - pG.x, 2) + Math.pow(pE.y - pG.y, 2));
 	var d2 = Math.sqrt(Math.pow(pF.x - pH.x, 2) + Math.pow(pF.y - pH.y, 2));
 	var L1 = H / Math.tan(h0);
 	var Hmax1 = Math.tan(h0) * (L1 - d1);
 	var Hmax2 = Math.tan(h0) * (L1 - d2);
-	if (Hmax1 < 0 && Hmax2 < 0) {return [];}
+	if (Hmax1 < 0 && Hmax2 < 0) {return []}
 	var L2 = Hmax1 / Math.tan(h0);
 	var L3 = Hmax2 / Math.tan(h0);
-	pG.la = pE.la - (d1 * Math.cos(Math.PI - alpha)) * 2 / dearth;
-	pG.ln = pE.ln + (d1 * Math.sin(Math.PI - alpha)) * 2 / dearth;
-	pH.la = pF.la - (d2 * Math.cos(Math.PI - alpha)) * 2 / dearth;
-	pH.ln = pF.ln + (d2 * Math.sin(Math.PI - alpha)) * 2 / dearth;
-	var pI = {la: pG.la - (L2 * Math.cos(Math.PI - mu)) * 2 / dearth,
-	          ln: pG.ln + (L2 * Math.sin(Math.PI - mu)) * 2 / dearth};
-	var pJ = {la: pH.la - (L3 * Math.cos(Math.PI - mu)) * 2 / dearth,
-	          ln: pH.ln + (L3 * Math.sin(Math.PI - mu)) * 2 / dearth};
+	var pI = {x: L2*Math.cos(Math.PI - mu) + pG.x,
+	          y: L2*Math.sin(Math.PI - mu) + pG.y};
+	var pJ = {x: L3*Math.cos(Math.PI - mu) + pH.x,
+	          y: L3*Math.sin(Math.PI - mu) + pH.y};
 	// [[pA.la,pA.ln],[pA2.la,pA2.ln],[pB2.la,pB2.ln],[pB.la,pB.ln]]
 	if (Hmax1 > 0 && Hmax2 > 0) {
 		return [pG,pH,pJ,pI];
@@ -900,27 +899,28 @@ function cliplight(h0, object, mu) {
 	var pL = object[1];
 	var H = object[2];
 	var L4 = H / Math.tan(h0);
-	var pM = {la: pK.la - (L4 * Math.cos(Math.PI - mu)) * 2 / dearth,
-	          ln: pK.ln + (L4 * Math.sin(Math.PI - mu)) * 2 / dearth};
-	var pN = {la: pL.la - (L4 * Math.cos(Math.PI - mu)) * 2 / dearth,
-	          ln: pL.ln + (L4 * Math.sin(Math.PI - mu)) * 2 / dearth};
+	var pM = {x: L4*Math.cos(Math.PI - mu) + pK.x,
+	          y: L4*Math.sin(Math.PI - mu) + pK.y};
+	var pN = {x: L4*Math.cos(Math.PI - mu) + pL.x,
+	          y: L4*Math.sin(Math.PI - mu) + pL.y};
 	return [pK,pL,pN,pM];
 }
-function mergeandclip(pAvg, subject, clippers) {
+function mergeandclip(subject, clippers) {
 	var polygons = [subject], newpoly;
 	var i = 0, j = 0;
 	for (i=0;i<clippers.length;i++) {
 		if (clippers[i].length === 0) {continue}
 		newpoly = [];
 		for (j=0;j<polygons.length;j++) {
-			if (polygons[j].length === 0) {continue}
-			newpoly.concat(clip_polygon(polygons[j], clippers[i], "difference"));
+			if (polygons[j].length !== 0) {
+			newpoly = newpoly.concat(clip_polygon(polygons[j], clippers[i], "difference"));
+			}
 		}
 		polygons = newpoly;
 	}
 	return polygons;
 }
-function doclips(h0, pAvg, gindex, walls, object, alpha, mu) {
+function doclips(h0, gindex, walls, object, alpha, mu) {
 	var j = 0;
 	var cs = clipshadow(h0, walls[gindex], object, alpha, mu);
 	var cl = [];
@@ -933,23 +933,24 @@ function doclips(h0, pAvg, gindex, walls, object, alpha, mu) {
 		}
 	}
 	var origpoly = [walls[gindex][0],
-	 {la: walls[gindex][0].la-(walls[gindex][2]*Math.cos(Math.PI-mu)*2/dearth),
-	  ln: walls[gindex][0].ln+(walls[gindex][2]*Math.sin(Math.PI-mu)*2/dearth)},
-	 {la: walls[gindex][1].la-(walls[gindex][2]*Math.cos(Math.PI-mu)*2/dearth),
-	  ln: walls[gindex][1].ln+(walls[gindex][2]*Math.sin(Math.PI-mu)*2/dearth)},
+	 {x: walls[gindex][0].x + walls[gindex][2]*Math.cos(Math.PI-mu),
+	  y: walls[gindex][0].y + walls[gindex][2]*Math.sin(Math.PI-mu)},
+	 {x: walls[gindex][1].x + walls[gindex][2]*Math.cos(Math.PI-mu),
+	  y: walls[gindex][1].y + walls[gindex][2]*Math.sin(Math.PI-mu)},
 	 walls[gindex][1]];
 	if (cl.length === 0) {return [origpoly]}
 	else {return mergeandclip(origpoly, cl)}
 }
-function recx(la0,_ln0,lax,_lnx){return dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(lax)-Math.sin(la0),2)+Math.pow(Math.cos(lax)-Math.cos(la0),2))/2)};
-function recy(_la0,ln0,lax,lnx){return dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(lax)-Math.cos(lax)*Math.cos(Math.abs(ln0-lnx)),2)+Math.pow(Math.cos(lax)*Math.sin(Math.abs(ln0-lnx)),2))/2)};
+function recx(la0,_ln0,lax,_lnx) {return dearth*Math.asin(Math.sqrt(Math.pow(Math.sin(lax)-Math.sin(la0),2)+Math.pow(Math.cos(lax)-Math.cos(la0),2))/2)}
+function recy(_la0,ln0,lax,lnx) {return dearth*Math.asin(Math.sqrt(Math.pow(Math.cos(lax)-Math.cos(lax)*Math.cos(Math.abs(ln0-lnx)),2)+Math.pow(Math.cos(lax)*Math.sin(Math.abs(ln0-lnx)),2))/2)}
+function polx(la0,x) {return la0-x*2/dearth}
+function poly(ln0,y) {return ln0+y*2/dearth}
 function PrepareData() {
 	var i = 0;
 	var walls = [];
 	var pA, pB;
-	var pOla = markeral[0].getPosition().lat() * pi180;
-	var pOln = markeral[0].getPosition().lng() * pi180;
-	var pO = {la: pOla, ln: pOln};
+	var pO = {la: markeral[0].getPosition().lat() * pi180,
+	          ln: markeral[0].getPosition().lng() * pi180};
 	var Hp = $("#planeh").spinner("value")*3;
 	var lw = $("#window").slider("value");
 	var tla = 0, tln = 0;
@@ -959,12 +960,16 @@ function PrepareData() {
 		tla = markeral[i].getPosition().lat() * pi180;
 		tln = markeral[i].getPosition().lng() * pi180;
 		avgla += tla; avgln += tln;
-		pA = {la: tla, ln: tln, x: recx(pOla,0,tla,0), y: recy(0,pOln,tla,tln)};
+		pA = {la: tla, ln: tln,
+		      x: recx(pO.la,0,tla,0), y: recy(0,pO.ln,tla,tln)};
+		if (pO.ln>pA.ln) {pA.y=-pA.y}; if (pO.la<pA.la) {pA.x=-pA.x};
 		if (walllength(pO, pA) > 1500) {return null;}
 		tla = markerbl[i].getPosition().lat() * pi180;
 		tln = markerbl[i].getPosition().lng() * pi180;
 		avgla += tla; avgln += tln;
-		pB = {la: tla, ln: tln, x: recx(pOla,0,tla,0), y: recy(0,pOln,tla,tln)};
+		pB = {la: tla, ln: tln,
+		      x: recx(pO.la,0,tla,0), y: recy(0,pO.ln,tla,tln)};
+		if (pO.ln>pB.ln) {pB.y=-pB.y}; if (pO.la<pB.la) {pB.x=-pB.x};
 		if (walllength(pO, pB) > 1500) {return null;}
 		if (walllength(pA, pB) > 200) {return null;}
 		n = 0;
@@ -978,11 +983,15 @@ function PrepareData() {
 	var pAvg = {la: avgla/markeral.length/2, ln: avgln/markeral.length/2};
 	tla = markerc.getPosition().lat() * pi180;
 	tln = markerc.getPosition().lng() * pi180;
-	var pC = {la: tla, ln: tln, x: recx(pOla,0,tla,0), y: recy(0,pOln,tla,tln)};
+	var pC = {la: tla, ln: tln,
+	          x: recx(pO.la,0,tla,0), y: recy(0,pO.ln,tla,tln)};
+	if (pO.ln>pC.ln) {pC.y=-pC.y}; if (pO.la<pC.la) {pC.x=-pC.x};
 	if (walllength(pO, pC) > 1500) {return null;}
 	tla = markerd.getPosition().lat() * pi180;
 	tln = markerd.getPosition().lng() * pi180;
-	var pD = {la: tla, ln: tln, x: recx(pOla,0,tla,0), y: recy(0,pOln,tla,tln)};
+	var pD = {la: tla, ln: tln,
+	          x: recx(pO.la,0,tla,0), y: recy(0,pO.ln,tla,tln)};
+	if (pO.ln>pD.ln) {pD.y=-pD.y}; if (pO.la<pD.la) {pD.x=-pD.x};
 	if (walllength(pO, pD) > 1500) {return null;}
 	if (walllength(pC, pD) > 75) {return null;}
 	var m = 0;
@@ -992,18 +1001,18 @@ function PrepareData() {
 	if (pC.la < pD.la) {m = Math.PI-m}
 	if (pC.ln < pD.ln) {m = -m}
 	var pE = {x: (pD.x*lw+pC.x*(100-lw))/100, y: (pD.y*lw+pC.y*(100-lw))/100};
-	return [pAvg, walls, pC, pD, pE, m, Hp];
+	return [pAvg, walls, pC, pD, pE, pO, m, Hp];
 }
-function Calc(daynum,time,pAvg,walls,pC,pD,pE,m,Hp,draw) {
+function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
 	var localtime = time+(pAvg.ln/pi180-120)/15;
 	var a = Math.PI*2*(daynum+localtime/24)/365;
 	var phi = 0.006918-0.399912*Math.cos(a)+0.070257*Math.sin(a)-0.006758*Math.cos(2*a)+0.000907*Math.sin(2*a)-0.002697*Math.cos(3*a)+0.001480*Math.sin(3*a);
 	var h0 = Math.asin(Math.cos((localtime-12)*15*pi180)*Math.cos(pAvg.la)*Math.cos(phi)+Math.sin(pAvg.la)*Math.sin(phi));
-	if (h0 <= 0) {return -1;}
+	if (h0 <= 0) {return -1}
 	var cosA = (Math.sin(h0)*Math.sin(pAvg.la)-Math.sin(phi))/Math.cos(h0)/Math.cos(pAvg.la);
 	var alpha = Math.acos(cosA);
 	if (localtime < 12) {alpha = -alpha};
-	var pA, pB, n, L, mu, lightrange;
+	var pA, pB, pF, n, L, mu, lightrange, d, hmax, gamma, lambda, B;
 	var worst = 0;
 	for (var i=0;i<walls.length;i++) {
 		pA = walls[i][0];
@@ -1019,11 +1028,9 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,m,Hp,draw) {
 		mu = 2*n-alpha;
 		// 反射光照在背面
 		if (Math.sin(mu-m)>0) {continue}
-		lightrange = doclips(h0, pAvg, i, walls, [pC, pD, Hp], alpha, mu);
+		lightrange = doclips(h0, i, walls, [pC, pD, Hp], alpha, mu);
 		// console.log(JSON.stringify(lightrange));
-		if (draw) {lineGraph(i, lightrange);}
-		if (pA.ln>pB.ln) {pB.y=-pB.y}; if (pA.la<pB.la) {pB.x=-pB.x};
-		if (pA.ln>pC.ln) {pC.y=-pC.y}; if (pA.la<pC.la) {pC.x=-pC.x};
+		if (draw) {lineGraph(pO, i, lightrange);}
 		if (pA.ln>pD.ln) {pD.y=-pD.y}; if (pA.la<pD.la) {pD.x=-pD.x};
 		pF = {x: (pE.y-Math.tan(Math.PI-mu))/(pB.y/pB.x-Math.tan(Math.PI-mu)),
 			  y: (pE.y-Math.tan(Math.PI-mu))*pB.y/((pB.y/pB.x-Math.tan(Math.PI-mu))*pB.x)};
@@ -1031,15 +1038,11 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,m,Hp,draw) {
 		hmax = Math.tan(h0)*(L-d);
 		// 照不到高度
 		if (hmax<Hp) {continue};
-		xa=L*Math.cos(Math.PI-mu);
-		xb=pB.x+L*Math.cos(Math.PI-mu);
-		ya=L*Math.sin(Math.PI-mu);
-		yb=pB.y+L*Math.sin(Math.PI-mu);
 		if (!pointinrange(pE, lightrange)) {continue};
 
-		gamma=-Math.PI/2+m-2*n+alpha;
-		lambda=Math.acos(Math.abs(Math.cos(gamma)*Math.cos(h0)));
-		B=rho*137000*Math.exp(-0.223/Math.sin(h0))/Math.PI;
+		gamma = -Math.PI/2+m-2*n+alpha;
+		lambda = Math.acos(Math.abs(Math.cos(gamma)*Math.cos(h0)));
+		B = rho*137000*Math.exp(-0.223/Math.sin(h0))/Math.PI;
 
 		if (lambda<Math.PI/12) {
 			if (B>=2000) {if (worst<5) {worst = 5}; continue;};
@@ -1058,13 +1061,17 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,m,Hp,draw) {
 	}
 	return worst;
 }
-function lineGraph(index, range){
+function lineGraph(pO, index, range){
 	if (visiblemark[index] && !pab1l[index].get('invisible')){
 		var i = 0, j = 0;
 		var paths = [], newpath = [];
 		for (i=0;i<range.length;i++) {
 			newpath = [];
 			for (j=0;j<range[i].length;j++) {
+				if (!range[i][j].hasOwnProperty('la')) {
+					range[i][j].la = pO.la - range[i][j].x*2/dearth;
+					range[i][j].ln = pO.ln + range[i][j].y*2/dearth;
+				}
 				newpath.push(new google.maps.LatLng(range[i][j].la/pi180, range[i][j].ln/pi180));
 			}
 			paths.push(newpath);
@@ -1165,8 +1172,9 @@ function DrawChart(densityx,densityy){
 	var pC = CalcPara[2];
 	var pD = CalcPara[3];
 	var pE = CalcPara[4];
-	var m = CalcPara[5];
-	var Hp = CalcPara[6];
+	var pO = CalcPara[5];
+	var m = CalcPara[6];
+	var Hp = CalcPara[7];
 	//Create scale functions
 	var graph = d3.select("#grapharea");
 	var lineFunction = d3.svg.line()
@@ -1183,6 +1191,7 @@ function DrawChart(densityx,densityy){
 	var addcount = 0;
 	var opened = false;
 	var calcrange;
+	var maxj = 0;
 	i = 0;
 	//console.log(JSON.stringify([pAvg,walls,pC,pD,pE,m,Hp]))
 	while (i < 365) {
@@ -1196,7 +1205,7 @@ function DrawChart(densityx,densityy){
 			lastnum = -1;
 			j = Math.ceil(calcrange[x][0]*60);
 			while (j<maxj){
-				nownum = Calc(i,j/60,pAvg,walls,pC,pD,pE,m,Hp,false);
+				nownum = Calc(i,j/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
 				if (nownum!==-1){if(i===364){
 					sumup[nownum]-=densityx*(365%densityy)
 					}else{sumup[nownum]+=densityx*densityy}};
@@ -1262,12 +1271,12 @@ function DrawLine(coord,mouse){
 	if (coord[0]>=padding*1.5 && coord[0]<w-padding*1.5
 		&& coord[1]>padding && coord[1]<=h - padding){
 		mouseDownOnElement=mouse;
-		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
-		$("#tptext").attr("x", coord[0]+7);
-		$("#tptext").attr("y", coord[1]+10);
 		var nowDate = new Date();
 		var startD = new Date(2014, 0);
 		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))+1));
+		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
+		$("#tptext").attr("x", coord[0]+7);
+		$("#tptext").attr("y", coord[1]+10);
 		nowDate.setMinutes(xrevScale(coord[0]));
 		$("#tptext").text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
 		if (map === undefined) {return;}
@@ -1278,9 +1287,10 @@ function DrawLine(coord,mouse){
 		var pC = CalcPara[2];
 		var pD = CalcPara[3];
 		var pE = CalcPara[4];
-		var m = CalcPara[5];
-		var Hp = CalcPara[6];
-		var val = Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,pAvg,walls,pC,pD,pE,m,Hp,true);
+		var pO = CalcPara[5];
+		var m = CalcPara[6];
+		var Hp = CalcPara[7];
+		var val = Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,pAvg,walls,pC,pD,pE,pO,m,Hp,true);
 		for (var x=0;x<markeral.length;x++){
 			if (val>-1 && !pab1l[x].get('invisible')){
 				pab1l[x].setOptions({fillColor: Palette[val], visible: true});
@@ -1493,44 +1503,46 @@ $(document).ready(function() {
 	// $(this).spinner("value", 1);
 	$("#smonth").spinner({
 		spin: function(event, ui) {
-			if (ui.value > 12) {$(this).spinner("value", 1);dayspin(1, $("#sday").spinner("value"));return false;
-				}else if (ui.value < 1) {$(this).spinner("value", 12);dayspin(12, $("#sday").spinner("value"));return false};
+			if (ui.value > 12) {$(this).spinner("value", 1);dayspin(1, $("#sday").spinner("value"));return false}
+			else if (ui.value < 1) {$(this).spinner("value", 12);dayspin(12, $("#sday").spinner("value"));return false}
 			dayspin(ui.value, $("#sday").spinner("value"))},
 		change: function(event, ui) {
 			dayspin($("#smonth").spinner("value"), $("#sday").spinner("value"))}
 	});
 	$("#sday").spinner({
 		spin: function(event, ui) {
-			if (ui.value > 31) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false;
-			} else if (ui.value < 1) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false};
+			if (ui.value > 31) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false}
+			else if (ui.value < 1) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false};
 			if ([4,6,9,11].indexOf($("#smonth").spinner("value")) > -1) {
 				if (ui.value > 30) {$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false}
 			} else if ($("#smonth").spinner("value") === 2 && ui.value > 28) {
-				$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);return false};
+				$(this).spinner("value", 1);dayspin($("#smonth").spinner("value"), 1);
+				return false;
+			}
 			dayspin($("#smonth").spinner("value"), ui.value)},
 		change: function(event, ui) {
 			dayspin($("#smonth").spinner("value"), $("#sday").spinner("value"))}
 	});
 	$("#shour").spinner({
 		spin: function(event, ui) {
-			if (ui.value > 23) {$(this).spinner("value", 0);timespin(0, $("#sminute").minutespinner("value"));return false;
-				}else if (ui.value < 0) {$(this).spinner("value", 23);timespin(23, $("#sminute").minutespinner("value"));return false};
+			if (ui.value > 23) {$(this).spinner("value", 0);timespin(0, $("#sminute").minutespinner("value"));return false}
+			else if (ui.value < 0) {$(this).spinner("value", 23);timespin(23, $("#sminute").minutespinner("value"));return false}
 			timespin(ui.value, $("#sminute").minutespinner("value"))},
 		change: function(event, ui) {
 			timespin($("#shour").spinner("value"), $("#sminute").minutespinner("value"))}
 	});
 	$("#sminute").minutespinner({
 		spin: function(event, ui) {
-			if (ui.value > 59) {$(this).minutespinner("value", 0);timespin($("#shour").spinner("value"), 0);return false;
-				}else if (ui.value < 0) {$(this).minutespinner("value", 59);timespin($("#shour").spinner("value"), 59);return false};
+			if (ui.value > 59) {$(this).minutespinner("value", 0);timespin($("#shour").spinner("value"), 0);return false}
+			else if (ui.value < 0) {$(this).minutespinner("value", 59);timespin($("#shour").spinner("value"), 59);return false}
 			timespin($("#shour").spinner("value"), ui.value)},
 		change: function(event, ui) {
 			timespin($("#shour").spinner("value"), $("#sminute").minutespinner("value"))}
 	});
 	$("#wallh").spinner({
 		spin: function(event, ui) {
-			if (ui.value > 90) {return false;
-				}else if (ui.value < 2) {return false;}
+			if (ui.value > 90) {return false}
+			else if (ui.value < 2) {return false}
 			gwallh[mkindex] = ui.value;
 			AutoRedraw();},
 		change: function(event, ui) {
@@ -1539,8 +1551,8 @@ $(document).ready(function() {
 	});
 	$("#planeh").spinner({
 		spin: function(event, ui) {
-			if (ui.value > 60) {return false;
-				}else if (ui.value < 1) {return false;}
+			if (ui.value > 60) {return false}
+			else if (ui.value < 1) {return false}
 			AutoRedraw();},
 		change: function(event, ui) {AutoRedraw()}
 	});
@@ -1573,13 +1585,13 @@ $(document).ready(function() {
 	$("#btnturn").button();
 	$("#btnturn").click(function(){
 		if ($("#radio1").is(':checked')){
-		tlatlng=markerb.getPosition();
-		markerb.setPosition(markera.getPosition());
-		markera.setPosition(tlatlng);
-		}else{
-		tlatlng=markerd.getPosition();
-		markerd.setPosition(markerc.getPosition());
-		markerc.setPosition(tlatlng);
+			var tlatlng = markerb.getPosition();
+			markerb.setPosition(markera.getPosition());
+			markera.setPosition(tlatlng);
+		} else {
+			var tlatlng = markerd.getPosition();
+			markerd.setPosition(markerc.getPosition());
+			markerc.setPosition(tlatlng);
 		}
 		});
 	$("#btnadd").button();
@@ -1603,16 +1615,16 @@ $(document).ready(function() {
 	var yGrid = d3.svg.axis().scale(yGrScale).orient("right").ticks(12)
 				  .tickFormat("").tickSize(w - padding*3,0);
 	var svg = d3.select("#chart-svg").append("svg").attr("width", w).attr("height", h).on("mousedown", function() {
-		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),true)})
+		nowcoord=d3.mouse(this);DrawLine(d3.mouse(this),true)})
 	.on("mousemove", function() {if (mouseDownOnElement){
-		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),true)}})
+		nowcoord=d3.mouse(this);DrawLine(d3.mouse(this),true)}})
 	.on("mouseup", function() {
 		nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),false)});
 	// .on("mouseout", function() {
 		// nowcoord=d3.mouse(this);cursorchange(nowcoord);DrawLine(d3.mouse(this),false)});
 	svg.append("rect").attr("x", padding*1.5).attr("y", padding-1).attr("width", w - padding*3).attr("height", h - padding*2+1).attr("fill","#F0F0F0");
 	svg.append("g").attr("id", "grapharea");
-	grida=svg.append("g").attr("class", "gridarea");
+	var grida = svg.append("g").attr("class", "gridarea");
 	grida.append("g").attr("class", "grid gx")
 		.attr("transform", "translate(0," + (h - padding) + ")").call(xGrid);
 	grida.append("g").attr("class", "grid gy")

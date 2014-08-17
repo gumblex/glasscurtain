@@ -225,7 +225,7 @@ footer {
 .grid line{
 	fill: none;
 	shape-rendering: crispEdges;
-	stroke: white;
+	stroke: whitesmoke;
 	stroke-width: 1;
 	opacity: 0.4;
 }
@@ -236,8 +236,6 @@ footer {
   stroke-width:2;
   stroke-opacity:1
 }
-* {
--webkit-print-color-adjust:exact}
 </style>
 <script>
 'use strict';
@@ -278,6 +276,7 @@ function initialize() {
 	if (typeof google === "undefined") {return;}
 	var mapOptions = {
 		zoom: 12,
+		center: new google.maps.LatLng(31.231, 121.474),
 		mapTypeId: google.maps.MapTypeId.ROADMAP,
 		streetViewControl: false
 	};
@@ -285,11 +284,7 @@ function initialize() {
 		navigator.geolocation.getCurrentPosition(
 			function(position) {
 				map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
-			}, function() {
-				map.setCenter(new google.maps.LatLng(31.231, 121.474))});
-	} else {
-		// Browser doesn't support Geolocation
-		map.setCenter(new google.maps.LatLng(31.231, 121.474));
+			});
 	}
 	geocoder = new google.maps.Geocoder();
 	google.maps.visualRefresh = true;
@@ -1033,8 +1028,8 @@ function PrepareData() {
 	}
 	if (pC.la < pD.la) {m = Math.PI-m}
 	if (pC.ln < pD.ln) {m = -m}
-	// var pE = {x: (pD.x*lw+pC.x*(100-lw))/100, y: (pD.y*lw+pC.y*(100-lw))/100};
-	var pE = {la: (pD.la*lw+pC.la*(100-lw))/100,
+	var pE = {x: (pD.x*lw+pC.x*(100-lw))/100, y: (pD.y*lw+pC.y*(100-lw))/100,
+	          la: (pD.la*lw+pC.la*(100-lw))/100,
 	          ln: (pD.ln*lw+pC.ln*(100-lw))/100};
 	return [pAvg, walls, pC, pD, pE, pO, m, Hp];
 }
@@ -1072,8 +1067,11 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
 			if (Math.sin(mu-m)>0) {continue}
 		}
 		if (pA.ln>pD.ln) {pD.y=-pD.y}; if (pA.la<pD.la) {pD.x=-pD.x};
-		pF = {la: (pE.ln-Math.tan(Math.PI-mu))/(pB.ln/pB.la-Math.tan(Math.PI-mu)),
-		      ln: (pE.ln-Math.tan(Math.PI-mu))*pB.ln/((pB.ln/pB.la-Math.tan(Math.PI-mu))*pB.la)};
+		pF = {x: (pE.y-Math.tan(Math.PI-mu))/(pB.y/pB.x-Math.tan(Math.PI-mu)),
+		      y: (pE.y-Math.tan(Math.PI-mu))*pB.y/((pB.y/pB.x-Math.tan(Math.PI-mu))*pB.x),
+		      la: (pA.ln - pE.ln - pA.la*(pB.ln-pA.ln)/(pB.la-pA.la) + Math.tan(Math.PI - mu)*pE.la) / (Math.tan(Math.PI - mu) - (pB.ln-pA.ln)/(pB.la-pA.la)),
+		      ln: Math.tan(Math.PI - mu)*((pA.ln - pE.ln - pA.la*(pB.ln-pA.ln)/(pB.la-pA.la) + Math.tan(Math.PI - mu)*pE.la) / (Math.tan(Math.PI - mu) - (pB.ln-pA.ln)/(pB.la-pA.la)) - pE.la) + pE.ln};
+		// d = Math.sqrt(Math.pow(pE.x-pF.x,2)+Math.pow(pE.y-pF.y,2));
 		d = walllength(pE, pF);
 		hmax = Math.tan(h0)*(L-d);
 		// 照不到高度
@@ -1127,12 +1125,16 @@ function timerIncrement() {
 	if (midleTime === 5) { // 500ms
 		DrawLine(nowcoord);
 		DrawChart(3,3);
-	}else if (midleTime > 50){
+	} else if (midleTime > 50) {
 		clearInterval(idleInterval);
 		idleInterval=-1;
 		midleTime=0;
 		DrawLine(nowcoord);
-		DrawChart(2,1);
+		if (markeral.length === 1) {
+			DrawChart(2,1);
+		} else {
+			DrawChart(3,1);
+		}
 	}
 }
 function AutoDraw(){
@@ -1323,11 +1325,10 @@ function DrawLine(coord,mouse){
 		var nowDate = new Date();
 		var startD = new Date(2014, 0);
 		var nowDate = new Date(startD.setDate(Math.floor(yrevScale(coord[1]))+1));
+		$("#tptext").css("display","none");
+		$("#tline").css("display","none");
 		$("#tpoint").attr("transform","translate("+coord[0]+","+coord[1]+")");
-		$("#tptext").attr("x", coord[0]+7);
-		$("#tptext").attr("y", coord[1]+10);
 		nowDate.setMinutes(xrevScale(coord[0]));
-		$("#tptext").text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
 		if (map === undefined) {return;}
 		var CalcPara = PrepareData();
 		if (CalcPara === null) {return;}
@@ -1339,13 +1340,39 @@ function DrawLine(coord,mouse){
 		var pO = CalcPara[5];
 		var m = CalcPara[6];
 		var Hp = CalcPara[7];
-		var val = Calc(Math.floor(yrevScale(coord[1])),xrevScale(coord[0])/60,pAvg,walls,pC,pD,pE,pO,m,Hp,true);
-		for (var x=0;x<markeral.length;x++){
+		var daynum = Math.floor(yrevScale(coord[1]));
+		var time = xrevScale(coord[0]);
+		var val = Calc(daynum,time/60,pAvg,walls,pC,pD,pE,pO,m,Hp,true);
+		var x = 0;
+		for (x=0;x<markeral.length;x++){
 			if (val>-1 && !pab1l[x].get('invisible')){
 				pab1l[x].setOptions({fillColor: Palette[val], visible: true});
 			} else {
 				pab1l[x].setOptions({visible: false});
 			}
+		}
+		var newtime = time;
+		var newval = val;
+		var tleft, tright;
+		if (val > 0) {
+			while (val === newval) {
+				newtime -= 1;
+				newval = Calc(daynum,newtime/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
+			}
+			tleft = newtime + 1;
+			newtime = time;
+			newval = val;
+			while (val === newval) {
+				newtime += 1;
+				newval = Calc(daynum,newtime/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
+			}
+			tright = newtime - 1;
+			$("#tline").attr("x1", xScale(tleft)).attr("x2", xScale(tright));
+			$("#tline").attr("y1", yScale(daynum)).attr("y2", yScale(daynum));
+			$("#tptext").attr("x", coord[0]+7).attr("y", coord[1]+10);
+			$("#tptext").text(("0" + Math.floor(tleft/60)).slice(-2) + ":" + ("0" + Math.floor(tleft%60)).slice(-2) + "~" + ("0" + Math.floor(tright/60)).slice(-2) + ":" + ("0" + Math.floor(tright%60)).slice(-2))
+			$("#tptext").css("display","block");
+			$("#tline").css("display","block");
 		}
 	}
 }
@@ -1685,6 +1712,15 @@ $(document).ready(function() {
 		.attr("transform", "translate(0," + (h - padding) + ")").call(xAxis);
 	svg.append("g").attr("class", "axis ay")
 		.attr("transform", "translate(" + padding*1.5 + ",0)").call(yAxis);
+	svg.append("line")
+		.attr("id","tline")
+		.attr("x1","0")
+		.attr("x2","0")
+		.attr("y1","0")
+		.attr("y2","0")
+		.attr("stroke", "#FFFFFF")
+		.attr("stroke-width", 2)
+		.style("display","none");
 	svg.append("path")
 		.attr("id","tpoint")
 		.attr("d","m -5,0 h 10 z m 5,-5 v 10 z")
@@ -1694,7 +1730,7 @@ $(document).ready(function() {
 		.attr("id","tptext")
 		.attr("x", xScale(nowDate.getHours()*60+nowDate.getMinutes())+7)
 		.attr("y", yScale(Math.floor((nowDate-startD)/86400000))+10)
-		.style("fill","#111111");
+		.style({"fill":"#111111", "display":"none"});
 		//.text((nowDate.getMonth()+1) + "-" + nowDate.getDate() + " " + ("0" + nowDate.getHours()).slice(-2) + ":" + ("0" + nowDate.getMinutes()).slice(-2));
 	$("#smonth").spinner("value", nowDate.getMonth()+1);
 	$("#sday").spinner("value", nowDate.getDate());
@@ -1702,9 +1738,9 @@ $(document).ready(function() {
 	$("#sminute").minutespinner("value", nowDate.getMinutes());
 	nowcoord=[xScale(nowDate.getHours()*60+nowDate.getMinutes()),yScale(Math.floor((nowDate-startD)/86400000))];
 	$(".axis text").mousedown(function(){return false});
-	$(".axis text").mousemove(function(){return false});
-	$("#tptext").mousedown(function(){return false});
-	$("#tptext").mousemove(function(){return false});
+	//$(".axis text").mousemove(function(){return false});
+	//$("#tptext").mousedown(function(){return false});
+	//$("#tptext").mousemove(function(){return false});
 	initialize();
 });
 </script>

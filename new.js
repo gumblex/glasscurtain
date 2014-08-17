@@ -304,9 +304,25 @@ function clipshadow(h0, subject, object, alpha, mu) {
 	// require {la, ln, x, y}
 	var pA = subject[0];
 	var pB = subject[1];
+	var n = subject[2];
 	var pE = object[0];
 	var pF = object[1];
 	var H = object[2];
+	if (pA.la === pE.la) {
+		var thetaea = Math.PI/2;
+		if (pA.ln < pE.ln) {thetaea = -thetaea} else {return []}
+	} else {
+		var thetaea = Math.atan((pA.ln-pE.ln)/(pA.la-pE.la));
+		if (pA.la < pE.la) {thetaea = Math.PI - thetaea}
+	}
+	if (pA.la === pF.la) {
+		var thetafa = Math.PI/2;
+		if (pA.ln < pF.ln) {thetafa = -thetafa} else {return []}
+	} else {
+		var thetafa = Math.atan((pA.ln-pF.ln)/(pA.la-pF.la));
+		if (pA.la < pF.la) {thetaea = Math.PI - thetafa}
+	}
+	if (Math.sin(thetaea-n) > 0 && Math.sin(thetafa-n) > 0) {return []}
 	var pG = {
 		la: (pA.ln - pE.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pE.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)),
 		ln: Math.tan(-alpha) * ((pA.ln - pE.ln - (pA.la * (pB.ln - pA.ln) / (pB.la - pA.la)) + Math.tan(-alpha) * pE.la) / (Math.tan(-alpha) - (pB.ln - pA.ln) / (pB.la - pA.la)) - pE.la) + pE.ln};
@@ -367,7 +383,6 @@ function mergeandclip(subject, clippers) {
 		}
 		polygons = newpoly;
 	}
-	print(JSON.stringify(polygons));
 	return polygons;
 }
 function doclips(h0, gindex, walls, object, alpha, mu) {
@@ -517,14 +532,13 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
 		
 		if (Math.sin(alpha-n)>0) {
 			if (draw) {pab1l[i].set('invisible', true)}
-			print('die at Math.sin(alpha-n)>0');
 			continue;
 		}
-		// 反射光照在背面
 		mu = 2*n-alpha;
-		if (!draw) {if (Math.sin(mu-m)>0) {print('die at Math.sin(mu-m)>0');continue}}
+		if (!draw) {if (Math.sin(mu-m)>0) {continue}}
+		// 反射光照在背面
 		lightrange = doclips(h0, i, walls, [pC, pD, Hp], alpha, mu);
-		//print(JSON.stringify(lightrange));
+		// console.log(JSON.stringify(lightrange));
 		if (draw) {
 			pab1l[i].set('invisible', false);
 			lineGraph(pO, i, lightrange);
@@ -536,8 +550,8 @@ function Calc(daynum,time,pAvg,walls,pC,pD,pE,pO,m,Hp,draw) {
 		d = walllength(pE, pF);
 		hmax = Math.tan(h0)*(L-d);
 		// 照不到高度
-		if (hmax<Hp) {print('hmax<Hp');continue};
-		if (!pointinrange(pE, lightrange)) {print('die at pip:',JSON.stringify(pE),JSON.stringify(lightrange));continue};
+		if (hmax<Hp) {continue};
+		if (!pointinrange(pE, lightrange)) {continue};
 
 		gamma = -Math.PI/2+m-2*n+alpha;
 		lambda = Math.acos(Math.abs(Math.cos(gamma)*Math.cos(h0)));

@@ -25,6 +25,7 @@ h1 {
 	font-size: 1.5em;
 	color: #0B3861;
 	display: inline;
+	padding-top: .2em;
 	padding-left: .1em;
 	font-family: 'Droid Sans Fallback', STHeiTi, '微软雅黑', '黑体', SimHei, sans-serif;
 }
@@ -280,12 +281,6 @@ function initialize() {
 		mapTypeId: google.maps.MapTypeId.ROADMAP,
 		streetViewControl: false
 	};
-	if(navigator.geolocation) {
-		navigator.geolocation.getCurrentPosition(
-			function(position) {
-				map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
-			});
-	}
 	geocoder = new google.maps.Geocoder();
 	google.maps.visualRefresh = true;
 	map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
@@ -427,9 +422,20 @@ function initialize() {
 	});
 	google.maps.event.addListener(poly, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(0);}
+		else {
+			$("#lbradio1").trigger('click');
+			ChangeWall(0);
+		}
+	});
+	google.maps.event.addListener(polyb, 'click', function () {
+		$("#lbradio2").trigger('click');
 	});
 	google.maps.event.addListener(pab1, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(0);}
+		else {
+			$("#lbradio1").trigger('click');
+			ChangeWall(0);
+		}
 	});
 	google.maps.event.addListener(mkdel, 'click', function () {
 		markera.setMap(null);
@@ -453,6 +459,12 @@ function initialize() {
 		AutoRedraw();
 	});
 	$("#radiogroup").change(function(){ChangeMarker();});
+	if(navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(
+			function(position) {
+				map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+			});
+	}
 }
 function ChangeMarker(){
 	if ($("#radio1").is(':checked')){
@@ -537,15 +549,29 @@ function AddWall(latlng) {
 		poly.setPath([markera.getPosition(), markerb.getPosition()]);
 		$("#distance").html(dist());AutoDraw();
 	});
+	google.maps.event.addListener(markera, 'click', function () {
+		TriggerDel(markera.getPosition());
+	});
 	google.maps.event.addListener(markerb, 'position_changed', function () {
 		poly.setPath([markera.getPosition(), markerb.getPosition()]);
 		$("#distance").html(dist());AutoDraw();
 	});
+	google.maps.event.addListener(markerb, 'click', function () {
+		TriggerDel(markera.getPosition());
+	});
 	google.maps.event.addListener(poly, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
+		else {
+			$("#lbradio1").trigger('click');
+			ChangeWall(markeral.length-1);
+		}
 	});
 	google.maps.event.addListener(pab1, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
+		else {
+			$("#lbradio1").trigger('click');
+			ChangeWall(markeral.length-1);
+		}
 	});
 	for (var x=0;x<markeral.length;x++){
 	pab1l[x].setVisible(false)}
@@ -578,13 +604,13 @@ function codeAddress() {
 		$("#errdiv p").text(function (){
 		if (status === google.maps.GeocoderStatus.ZERO_RESULTS) {
 		return "找不到地址。";
-		}else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+		} else if (status === google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
 		return "超出配额。";
-		}else if (status === google.maps.GeocoderStatus.REQUEST_DENIED) {
+		} else if (status === google.maps.GeocoderStatus.REQUEST_DENIED) {
 		return "请求被拒绝。";
-		}else if (status === google.maps.GeocoderStatus.INVALID_REQUEST) {
+		} else if (status === google.maps.GeocoderStatus.INVALID_REQUEST) {
 		return "查询内容错误。";
-		}else{return "连接错误。";}
+		} else {return "连接错误。";}
 		});
 		$("#error").show();
 		$("#error").delay(7500);
@@ -611,12 +637,13 @@ Vertex.prototype.isInside = function (poly) {
 	// Test if a vertex lies inside a polygon (odd-even rule).
 	var self = this;
 	var winding_number = 0;
+	var q = poly.first;
 	var infinity = new Vertex({la: 1000000, ln: self.ln});
-	var polyiter = poly.iter(), q, kq = 0;
-	for (kq=0;kq<polyiter.length;kq++) {
-		q = polyiter[kq];
+	while (true) {
 		if (!q.intersect && !!intersect(self, infinity, q, poly.next(q.next))) {
 			winding_number++;}
+		q = q.next;
+		if (q === poly.first) {break}
 	}
 	return ((winding_number % 2) !== 0);
 };
@@ -659,78 +686,88 @@ Polygon.prototype.next = function (v) {
 	return c;
 };
 Polygon.prototype.first_intersect = function () {
-	var selfiter = this.iter(), v, kv = 0;
-	for (kv=0;kv<selfiter.length;kv++) {
-		v = selfiter[kv];
+	var self = this;
+	var v = self.first;
+	while (true) {
 		if (v.intersect && !v.checked) {break;}
+		v = v.next;
+		if (v === self.first) {break;}
 	}
 	return v;
 };
 Polygon.prototype.points = function () {
+	var self = this;
 	var p = [];
-	var selfiter = this.iter(), v, kv = 0;
-	for (kv=0;kv<selfiter.length;kv++) {
-		v = selfiter[kv];
+	var v = self.first;
+	while (true) {
 		p.push({la: v.la, ln: v.ln});
+		v = v.next;
+		if (v === self.first) {break;}
 	}
 	return p;
 };
 Polygon.prototype.unprocessed = function () {
-	var selfiter = this.iter(), v, kv = 0;
-	for (kv=0;kv<selfiter.length;kv++) {
-		v = selfiter[kv];
+	var self = this;
+	var v = self.first;
+	while (true) {
 		if (v.intersect && !v.checked) {return true;}
+		v = v.next;
+		if (v === self.first) {break;}
 	}
 	return false;
 };
 Polygon.prototype.clip = function (clip, s_entry, c_entry) {
 	// Clip self polygon using another one as a clipper.
 	var self = this;
-	var selfiter = self.iter(), s, ks = 0;
-	var clipiter = clip.iter(), c, kc = 0;
+	var s = self.first;
+	var c = clip.first;
 	var islist, iS, iC;
-	for (ks=0;ks<selfiter.length;ks++) {
-		s = selfiter[ks];
+	while (true) {
 		if (!s.intersect) {
-        clipiter = clip.iter();
-        for (kc=0;kc<clipiter.length;kc++) {
-            c = clipiter[kc];
-            if (!c.intersect) {
-                islist = intersect(s, self.next(s.next), c, clip.next(c.next));
-                if (islist !== undefined) {
-                    iS = new Vertex(islist[0]);
-                    iS.alpha = islist[1];
-                    iS.intersect = true;
-                    iS.entry = false;
-                    iC = new Vertex(islist[0]);
-                    iC.alpha = islist[2];
-                    iC.intersect = true;
-                    iC.entry = false;
-                    iS.neighbour = iC;
-                    iC.neighbour = iS;
-                    self.insert(iS, s, self.next(s.next));
-                    clip.insert(iC, c, clip.next(c.next));
-                }
-            }
-        }}
+		c = clip.first;
+		while (true) {
+			if (!c.intersect) {
+				islist = intersect(s, self.next(s.next), c, clip.next(c.next));
+				if (islist !== undefined) {
+					iS = new Vertex(islist[0]);
+					iS.alpha = islist[1];
+					iS.intersect = true;
+					iS.entry = false;
+					iC = new Vertex(islist[0]);
+					iC.alpha = islist[2];
+					iC.intersect = true;
+					iC.entry = false;
+					iS.neighbour = iC;
+					iC.neighbour = iS;
+					self.insert(iS, s, self.next(s.next));
+					clip.insert(iC, c, clip.next(c.next));
+				}
+			}
+			c = c.next;
+			if (c === clip.first) {break;}
+		}}
+		s = s.next;
+		if (s === self.first) {break;}
 	}
 	s_entry = (!s_entry !== !self.first.isInside(clip));
-	selfiter = self.iter();
-	for (ks=0;ks<selfiter.length;ks++) {
-		s = selfiter[ks];
+	s = self.first;
+	while (true) {
 		if (s.intersect) {
 			s.entry = s_entry;
 			s_entry = !s_entry;
 		}
+		s = s.next;
+		if (s === self.first) {break;}
 	}
 	c_entry = (!c_entry !== !clip.first.isInside(self));
-	clipiter = clip.iter();
-	for (kc=0;kc<clipiter.length;kc++) {
-		c = clipiter[kc];
+	c = clip.first;
+	while (true) {
 		if (c.intersect) {
 			c.entry = c_entry;
 			c_entry = !c_entry;
 		}
+		c = c.next;
+		if (c === clip.first) {break;}
 	}
 	var list = [], current, clipped;
 	while (self.unprocessed()) {
@@ -1131,9 +1168,9 @@ function timerIncrement() {
 		midleTime=0;
 		DrawLine(nowcoord);
 		if (markeral.length === 1) {
-			DrawChart(2,1);
+			DrawChart(2,2);
 		} else {
-			DrawChart(3,1);
+			DrawChart(3,2);
 		}
 	}
 }
@@ -1356,11 +1393,23 @@ function DrawLine(coord,mouse){
 		var tleft, tright;
 		if (val > 0) {
 			while (val === newval) {
+				newtime -= 20;
+				newval = Calc(daynum,newtime/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
+			}
+			newtime += 20;
+			newval = val;
+			while (val === newval) {
 				newtime -= 1;
 				newval = Calc(daynum,newtime/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
 			}
 			tleft = newtime + 1;
 			newtime = time;
+			newval = val;
+			while (val === newval) {
+				newtime += 20;
+				newval = Calc(daynum,newtime/60,pAvg,walls,pC,pD,pE,pO,m,Hp,false);
+			}
+			newtime -= 20;
 			newval = val;
 			while (val === newval) {
 				newtime += 1;

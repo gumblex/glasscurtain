@@ -35,6 +35,21 @@ h2 { font-size: 1.25em }
 p {
 	margin: 0.5em 0;
 }
+#replayintro {
+	display: block;
+	float: right;
+	font-size: 1em;
+	font-weight: bold;
+	line-height: 1.5em;
+	margin: 1.25em;
+	color: #FF851B;
+}
+#replayintro:hover {
+	color: #FF4136;
+}
+.steps {
+	color: #F5F6CE;
+}
 #map-canvas {
 	position: relative;
 	height: 500px;
@@ -1827,7 +1842,7 @@ $(document).ready(function() {
 </div>
 <![endif]-->
 <header>
-<h1>玻璃幕墙光反射影响预测工具</h1>
+<h1>玻璃幕墙光反射影响预测工具</h1><a id="replayintro" href="#" onclick="$('body').chardinJs('start');" title="显示使用提示">?</a>
 </header>
 <section id="app">
 	<div id="simpleSearch">
@@ -1841,7 +1856,7 @@ $(document).ready(function() {
 		</div>
 	</div>
 	<section id="graph">
-		<div id="chart-svg" data-intro="显示一年中的光反射影响情况变化，拖动光标显示此时玻璃幕墙光反射的范围" data-position="bottom"></div>
+		<div id="chart-svg" data-intro="显示一年中的光反射影响情况变化，拖动光标显示此时玻璃幕墙光反射的范围" data-position="bottom:20"></div>
 		<div id="chart-legend">
 			<div id="sptimegroup"><div class="sptimegroupsmall">
 			<input id="smonth" class="jquisp" value="1">月
@@ -1857,14 +1872,14 @@ $(document).ready(function() {
 		<form id="radiogroup" onsubmit="return false;">
 		<span class="wigtitle">更改地图上墙面：</span>
 		<span class="jquibt"><button id="btnadd" name="btnadd" title="新增玻璃幕墙"><span id="btnaddw">+</span></button></span>
-		<div class="jquibt" id="radio" data-intro="2. 选中“住宅墙面”，<br>在地图上标出住宅墙面" data-position="right">
+		<div class="jquibt" id="radio" data-intro="<span class='steps'>2. 选中“住宅墙面”，在地图上标出住宅墙面</span>" data-position="right">
 			<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1" id="lbradio1">玻璃幕墙 <span id="distance" class="num">0</span><span class="num">米</span></label>
 			<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">住宅墙面 <span id="distanceb" class="num">0</span><span class="num">米</span></label>
 		</div>
 		<span class="jquibt"><button id="btnturn" name="btnturn" title="旋转选中的墙面"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
 		</form>
 		<div class="slidergroup">
-		<span data-intro="3. 分别调整层数<br>以及窗的相对位置" data-position="right">
+		<span data-intro="<span class='steps'>3. 分别调整层数以及窗的相对位置</span>" data-position="right">
 		<span class="wigtitle">玻璃幕墙层数：</span>
 		<input id="wallh" class="jquisp" value=20><span class="unit">层</span>
 		<span class="wigtitle">住宅楼层：</span>
@@ -1873,7 +1888,7 @@ $(document).ready(function() {
 		</span>
 		</div>
 	</section>
-	<div id="map-canvas" title="调整窗在受照墙面的位置" data-intro="1. 在地图上用鼠标单击定位玻璃幕墙" data-position="bottom"><p class="ui-widget ui-state-error ui-corner-all" style="text-align: center; font-weight: bold; padding: .3em">错误：地图未载入，可能由于网络连接问题或浏览器版本过低。所有功能将无法使用。</p></div>
+	<div id="map-canvas" title="调整窗在受照墙面的位置" data-intro="<span class='steps'>1. 在地图上用鼠标单击定位玻璃幕墙</span>" data-position="right:72"><p class="ui-widget ui-state-error ui-corner-all" style="text-align: center; font-weight: bold; padding: .3em">错误：地图未载入，可能由于网络连接问题或浏览器版本过低。<br>所有功能将无法使用。</p></div>
 </section>
 <footer>
 <div class="info">

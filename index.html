@@ -179,7 +179,7 @@ label.forrad span, #btnturn span{
 	text-indent: .5em;
 }
 #btnturn{
-	margin-right: 1em;
+	margin-left: .5em;
 }
 #button{
 	margin: 2em 1em;
@@ -1833,17 +1833,18 @@ $(document).ready(function() {
 	</section>
 	<section id="tools">
 		<form id="radiogroup" onsubmit="return false;">
-		<span class="wigtitle">更改地图上墙面：</span><span class="jquibt"><button id="btnturn" name="btnturn"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
+		<span class="wigtitle">更改地图上墙面：</span>
 		<span class="jquibt"><button id="btnadd" name="btnadd" title="新增玻璃幕墙"><span id="btnaddw">+</span></button></span>
 		<div class="jquibt" id="radio">
 			<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1" id="lbradio1">玻璃幕墙 <span id="distance" class="num">0</span><span class="num">米</span></label>
-			<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">受照射墙面 <span id="distanceb" class="num">0</span><span class="num">米</span></label>
-		  </div>
+			<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">住宅墙面 <span id="distanceb" class="num">0</span><span class="num">米</span></label>
+		</div>
+		<span class="jquibt"><button id="btnturn" name="btnturn" title="旋转选中的墙面"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
 		</form>
 		<div class="slidergroup">
 		<span class="wigtitle">玻璃幕墙层数：</span>
 		<input id="wallh" class="jquisp" value=20><span class="unit">层</span>
-		<span class="wigtitle">受照射面楼层：</span>
+		<span class="wigtitle">住宅楼层：</span>
 		<input id="planeh" class="jquisp" value=6><span class="unit">层</span>
 		<span class="wigtitle">窗：</span><div id="window" class="slider" title="调整窗在受照墙面的位置"></div></div>
 	</section>

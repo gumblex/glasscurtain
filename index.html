@@ -8,8 +8,10 @@
 <title>玻璃幕墙光反射影响预测工具</title>
 <script src="jquery-1.10.2.min.js"></script>
 <script src="jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0"></script>
 <link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.custom.min.css">
+<link href="chardinjs.css" rel="stylesheet">
+<script src="chardinjs.min.js"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyC8mjYLDLdDSwJJsEzJNKCCGiE_R2RzyK0"></script>
 <script src="d3.v3.min.js"></script>
 <style>
 body {
@@ -1444,6 +1446,22 @@ function cursorchange(coord){
 	$("#sminute").minutespinner("value", nowDate.getMinutes());
 	}
 }
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+d.toGMTString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) != -1) return c.substring(name.length,c.length);
+    }
+    return "";
+}
 $.widget("ui.minutespinner", $.ui.spinner, {
 	options: {
 		step: 1,
@@ -1791,6 +1809,10 @@ $(document).ready(function() {
 	//$("#tptext").mousedown(function(){return false});
 	//$("#tptext").mousemove(function(){return false});
 	initialize();
+	if (getCookie("visited") === '') {
+		$('body').chardinJs('start');
+		setCookie('visited', 'yes');
+	}
 });
 </script>
 </head>
@@ -1819,7 +1841,7 @@ $(document).ready(function() {
 		</div>
 	</div>
 	<section id="graph">
-		<div id="chart-svg"></div>
+		<div id="chart-svg" data-intro="显示一年中的光反射影响情况变化，拖动光标显示此时玻璃幕墙光反射的范围" data-position="bottom"></div>
 		<div id="chart-legend">
 			<div id="sptimegroup"><div class="sptimegroupsmall">
 			<input id="smonth" class="jquisp" value="1">月
@@ -1835,20 +1857,23 @@ $(document).ready(function() {
 		<form id="radiogroup" onsubmit="return false;">
 		<span class="wigtitle">更改地图上墙面：</span>
 		<span class="jquibt"><button id="btnadd" name="btnadd" title="新增玻璃幕墙"><span id="btnaddw">+</span></button></span>
-		<div class="jquibt" id="radio">
+		<div class="jquibt" id="radio" data-intro="2. 选中“住宅墙面”，<br>在地图上标出住宅墙面" data-position="right">
 			<input type="radio" id="radio1" name="radio" value="wa" checked="checked"><label class="forrad" for="radio1" id="lbradio1">玻璃幕墙 <span id="distance" class="num">0</span><span class="num">米</span></label>
 			<input type="radio" id="radio2" name="radio" value="wb"><label class="forrad" for="radio2" id="lbradio2">住宅墙面 <span id="distanceb" class="num">0</span><span class="num">米</span></label>
 		</div>
 		<span class="jquibt"><button id="btnturn" name="btnturn" title="旋转选中的墙面"><span id="btnturnw" class="clr1">旋转墙面</span></button></span>
 		</form>
 		<div class="slidergroup">
+		<span data-intro="3. 分别调整层数<br>以及窗的相对位置" data-position="right">
 		<span class="wigtitle">玻璃幕墙层数：</span>
 		<input id="wallh" class="jquisp" value=20><span class="unit">层</span>
 		<span class="wigtitle">住宅楼层：</span>
 		<input id="planeh" class="jquisp" value=6><span class="unit">层</span>
-		<span class="wigtitle">窗：</span><div id="window" class="slider" title="调整窗在受照墙面的位置"></div></div>
+		<span class="wigtitle">窗：</span><div id="window" class="slider"></div>
+		</span>
+		</div>
 	</section>
-	<div id="map-canvas"><p class="ui-widget ui-state-error ui-corner-all" style="text-align: center; font-weight: bold; padding: .3em">错误：地图未载入，可能由于网络连接故障或浏览器版本过低。所有功能将无法使用。</p></div>
+	<div id="map-canvas" title="调整窗在受照墙面的位置" data-intro="1. 在地图上用鼠标单击定位玻璃幕墙" data-position="bottom"><p class="ui-widget ui-state-error ui-corner-all" style="text-align: center; font-weight: bold; padding: .3em">错误：地图未载入，可能由于网络连接问题或浏览器版本过低。所有功能将无法使用。</p></div>
 </section>
 <footer>
 <div class="info">

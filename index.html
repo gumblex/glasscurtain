@@ -1208,17 +1208,14 @@ function AutoRedraw(){
 	};
 };
 function _getmarkers(){
-	return [markera.getPosition().lat(),
-	markera.getPosition().lng(),
-	markerb.getPosition().lat(),
-	markerb.getPosition().lng(),
-	markerc.getPosition().lat(),
-	markerc.getPosition().lng(),
-	markerd.getPosition().lat(),
-	markerd.getPosition().lng(),
+	return [JSON.stringify(PrepareData()),
 	map.getCenter().lat(),
 	map.getCenter().lng(),
-	map.getZoom()]
+	map.getZoom(),
+	JSON.stringify(gwallh),
+	$("#planeh").spinner("value"),
+	$("#window").slider("value"),
+	JSON.stringify(nowcoord)]
 	//$("#wallh").spinner("value"),
 	//$("#planeh").spinner("value"),
 	//$("#window").slider("value")
@@ -1464,6 +1461,22 @@ function getCookie(cname) {
     }
     return "";
 }
+
+function _demo(){
+	var search = "上海市南京西路";
+	var latlng = [31.23038069667935, 121.45902335643768, 31.23011923405071, 121.4589911699295, 31.2300504279755, 121.45944982767105, 31.23017427887469, 121.45977169275284, 31.23009325995536, 121.45942498032198, 19]
+	// 当日时间 影响情况图右下改时间到 2.1 7:30 鼠标缓慢拖动到 2.1 14:30
+}
+function animatetext(item, text, time){
+	var i = 0;
+	var intid = -1;
+	intid = setInterval(function (){
+		$(item).attr('value', text.substr(0,i));
+		i++;
+		if (i>=text.length){clearInterval(intid)}
+		}, time);
+}
+
 $.widget("ui.minutespinner", $.ui.spinner, {
 	options: {
 		step: 1,

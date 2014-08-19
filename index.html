@@ -478,12 +478,6 @@ function initialize() {
 		AutoRedraw();
 	});
 	$("#radiogroup").change(function(){ChangeMarker();});
-	if(navigator.geolocation) {
-		navigator.geolocation.getCurrentPosition(
-			function(position) {
-				map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
-			});
-	}
 }
 function ChangeMarker(){
 	if ($("#radio1").is(':checked')){
@@ -1213,15 +1207,6 @@ function AutoRedraw(){
 	//timeoutID=setTimeout("DrawChart(1,1);timeoutID=-1",2000);
 	};
 };
-function _newmarker(p,t){
-	var a = new google.maps.Marker({
-		position: new google.maps.LatLng(p.la/pi180, p.ln/pi180),
-		map: map,
-		title: t,
-		visible: true,
-		draggable: false
-	});
-}
 function _getmarkers(){
 	return [markera.getPosition().lat(),
 	markera.getPosition().lng(),
@@ -1829,6 +1814,13 @@ $(document).ready(function() {
 	if (getCookie("visited") === '') {
 		$('body').chardinJs('start');
 		setCookie('visited', 'yes');
+	}
+	if(navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(
+			function(position) {
+				map.panTo(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+				map.setZoom(14);
+			});
 	}
 });
 </script>

@@ -256,6 +256,12 @@ footer {
   stroke-width:2;
   stroke-opacity:1
 }
+#cursor {
+	width: 0;
+	height: 0;
+	border-top: 10px solid red;
+	border-right: 10px solid transparent;
+}
 </style>
 <script>
 'use strict';
@@ -1464,19 +1470,41 @@ function getCookie(cname) {
 
 function _demo(){
 	var search = "上海市南京西路";
-	var latlng = [31.23038069667935, 121.45902335643768, 31.23011923405071, 121.4589911699295, 31.2300504279755, 121.45944982767105, 31.23017427887469, 121.45977169275284, 31.23009325995536, 121.45942498032198, 19]
+	var mapcenter = new google.maps.LatLng(31.2301322500545, 121.45944107357607);
+	var mapzoom = 19;
+	var mkab = [[new google.maps.LatLng(31.23034400021371,121.45900994539261),
+	             new google.maps.LatLng(31.230110059910245,121.4589884877205)],
+	            [new google.maps.LatLng(31.23041968665847,121.45947128534318),
+	             new google.maps.LatLng(31.23034400021371,121.45928621292114)]];
+	var mkcd =  [new google.maps.LatLng(31.230096298697887,121.45947933197021),
+	             new google.maps.LatLng(31.230171985341062,121.45978242158888)];
+	var wallh = [25,25];
+	var planeh = 6;
+	var window = 16;
+	var coord = [225.89635163307852,33.07692307692304];
+	//$('body').chardinJs('start');
+	$('body').queue(function() {$('body').chardinJs('start');$(this).dequeue();});
+	$('body').delay(3000);
+	$('body').queue(function() {$('body').chardinJs('stop');$(this).dequeue();});
+	$('#address').focus().delay(100);
+	$('body').queue(function() {animatetext('#address', search, 250);$(this).dequeue();});
+	$('#imgsearch').focus().delay(200);
+	$('#imgsearch').click().delay(100);
+	$('body').queue(function() {map.panTo(new google.maps.LatLng(31.2301322500545, 121.45944107357607));
+	map.setZoom(19);$(this).dequeue();});
+	$('body').delay(1000);
+	
 	// 当日时间 影响情况图右下改时间到 2.1 7:30 鼠标缓慢拖动到 2.1 14:30
 }
 function animatetext(item, text, time){
 	var i = 0;
 	var intid = -1;
 	intid = setInterval(function (){
-		$(item).attr('value', text.substr(0,i));
+		$(item).prop('value', text.substr(0,i));
 		i++;
-		if (i>=text.length){clearInterval(intid)}
+		if (i>text.length){clearInterval(intid)}
 		}, time);
 }
-
 $.widget("ui.minutespinner", $.ui.spinner, {
 	options: {
 		step: 1,

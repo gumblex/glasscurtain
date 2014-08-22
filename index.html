@@ -298,8 +298,42 @@ var mkdelTimeout = -1;
 var xScale, yScale, xrevScale, yrevScale;
 var nowcoord=[0,0];
 var mouseDownOnElement=false;
+var ismobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+var QueryString = function () {
+	// This function is anonymous, is executed immediately and 
+	// the return value is assigned to QueryString!
+	var query_string = {};
+	var query = window.location.search.substring(1);
+	var vars = query.split("&");
+	for (var i=0;i<vars.length;i++) {
+		var pair = vars[i].split("=");
+			// If first entry with this name
+		if (typeof query_string[pair[0]] === "undefined") {
+			query_string[pair[0]] = pair[1];
+			// If second entry with this name
+		} else if (typeof query_string[pair[0]] === "string") {
+			var arr = [ query_string[pair[0]], pair[1] ];
+			query_string[pair[0]] = arr;
+			// If third or later entry with this name
+		} else {
+			query_string[pair[0]].push(pair[1]);
+		}
+	}
+	return query_string;
+} ();
+var GraphPara = function () {
+	if (QueryString.hasOwnProperty("d")) {
+		var s = QueryString.d;
+		return [[parseInt(s.charAt(0)),parseInt(s.charAt(1))],
+		        [parseInt(s.charAt(2)),parseInt(s.charAt(3))]];
+	} else {
+		return false;
+	}
+} ();
+
 function initialize() {
 	if (typeof google === "undefined") {return;}
+	if (typeof google.maps === "undefined") {return;}
 	var mapOptions = {
 		zoom: 12,
 		center: new google.maps.LatLng(31.231, 121.474),
@@ -1180,13 +1214,15 @@ function timerIncrement() {
 	midleTime++;
 	if (midleTime === 5) { // 500ms
 		DrawLine(nowcoord);
-		DrawChart(3,3);
-	} else if (midleTime > 50) {
+		if (GraphPara) {DrawChart.apply(this, GraphPara[0]);}
+		else {DrawChart(3,3);}
+	} else if (midleTime > 50 && !ismobile) {
 		clearInterval(idleInterval);
 		idleInterval=-1;
 		midleTime=0;
 		DrawLine(nowcoord);
-		if (markeral.length === 1) {
+		if (GraphPara) {DrawChart.apply(this, GraphPara[1]);}
+		else if (markeral.length === 1) {
 			DrawChart(2,2);
 		} else {
 			DrawChart(3,2);
@@ -1493,7 +1529,16 @@ function _demo(){
 	$('body').queue(function() {map.panTo(new google.maps.LatLng(31.2301322500545, 121.45944107357607));
 	map.setZoom(19);$(this).dequeue();});
 	$('body').delay(1000);
-	
+	$('body').queue(function() {
+		markera.setPosition(mkab[0][0]);
+		$(this).dequeue();
+	});
+	$('body').delay(1000);
+	$('body').queue(function() {
+		markerb.setPosition(mkab[0][1]);
+		$(this).dequeue();
+	});
+	$('body').delay(1000);
 	// 当日时间 影响情况图右下改时间到 2.1 7:30 鼠标缓慢拖动到 2.1 14:30
 }
 function animatetext(item, text, time){
@@ -1600,7 +1645,7 @@ $(document).ready(function() {
 			.attr("y", 3*lineHeight+16)
 			.style("font-size","16px")
 			.text("选择时间");
-	}else{
+	} else {
 		w = $(document.body).width() * 0.6;
 		h = 275;
 		lineHeight=25;
@@ -1856,7 +1901,9 @@ $(document).ready(function() {
 		$('body').chardinJs('start');
 		setCookie('visited', 'yes');
 	}
-	if(navigator.geolocation) {
+	if (QueryString.hasOwnProperty("demo")) {
+		_demo();
+	} else if (navigator.geolocation) {
 		navigator.geolocation.getCurrentPosition(
 			function(position) {
 				map.panTo(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));

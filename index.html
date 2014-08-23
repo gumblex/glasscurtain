@@ -914,7 +914,7 @@ function distb() {
 		                  ln: markerc.getPosition().lng() * pi180},
 		                 {la: markerd.getPosition().lat() * pi180,
 		                  ln: markerd.getPosition().lng() * pi180});
-	if (s>75){$("#distanceb").css("color","red")
+	if (s>150){$("#distanceb").css("color","red")
 	}else{$("#distanceb").css("color","#175086")};
 	return Math.round(s);
 }
@@ -1111,7 +1111,7 @@ function PrepareData() {
 	          x: recx(pO.la,0,tla,0), y: recy(0,pO.ln,tla,tln)};
 	if (pO.ln>pD.ln) {pD.y=-pD.y}; if (pO.la<pD.la) {pD.x=-pD.x};
 	if (walllength(pO, pD) > 1500) {return null;}
-	if (walllength(pC, pD) > 75) {return null;}
+	if (walllength(pC, pD) > 150) {return null;}
 	var m = 0;
 	if (pC.la !== pD.la) {
 		m = Math.acos(Math.asin(Math.sqrt(Math.pow((Math.sin(pD.la)-Math.sin(pC.la)),2)+Math.pow((Math.cos(pD.la)-Math.cos(pC.la)),2))/2)/Math.asin(Math.sqrt(Math.pow((Math.sin(pD.la)-Math.sin(pC.la)),2)+Math.pow((Math.cos(pD.la)-Math.cos(pC.la)*Math.cos(Math.abs(pC.ln-pD.ln))),2)+Math.pow((Math.cos(pC.la)*Math.sin(Math.abs(pC.ln-pD.ln))),2))/2));

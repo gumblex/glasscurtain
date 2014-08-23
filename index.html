@@ -429,14 +429,13 @@ function initialize() {
 			markerb.setVisible(true);
 			poly.setPath([markera.getPosition(), markerb.getPosition()]);
 			poly.setVisible(true);
-			if (polyb.getVisible()){
-				visiblemark[mkindex]=true;}
+			visiblemark[mkindex]=true;
 		} else {
 			markera.setPosition(event.latLng);
 			poly.setPath([markera.getPosition(), markerb.getPosition()]);
 			visiblemark[mkindex]=true;
 		}
-	}else{
+	} else {
 		if (!markerc.getVisible()) {
 			markerc.setPosition(event.latLng);
 			markerc.setVisible(true);
@@ -458,7 +457,7 @@ function initialize() {
 		if ($("#radio1").is(':checked')){
 		markerb.setPosition(event.latLng);
 		poly.setPath([markera.getPosition(), markerb.getPosition()]);
-		}else{
+		} else {
 		markerd.setPosition(event.latLng);
 		polyb.setPath([markerc.getPosition(), markerd.getPosition()]);
 		}
@@ -612,18 +611,19 @@ function AddWall(latlng) {
 	google.maps.event.addListener(markerb, 'click', function () {
 		TriggerDel(markera.getPosition());
 	});
+	var newindex = markeral.length-1;
 	google.maps.event.addListener(poly, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
 		else {
 			$("#lbradio1").trigger('click');
-			ChangeWall(markeral.length-1);
+			ChangeWall(newindex);
 		}
 	});
 	google.maps.event.addListener(pab1, 'click', function () {
 		if ($("#radio1").is(':checked')){ChangeWall(markeral.length-1);}
 		else {
 			$("#lbradio1").trigger('click');
-			ChangeWall(markeral.length-1);
+			ChangeWall(newindex);
 		}
 	});
 	for (var x=0;x<markeral.length;x++){
